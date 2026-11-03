@@ -102,7 +102,10 @@ svg{display:block;flex:none}
 .win{position:relative;width:1280px;height:760px;display:flex;flex-direction:column;
   background:var(--ork-bg-canvas);border:1px solid var(--ork-border);
   border-radius:var(--ork-r-xl);overflow:hidden}
-.win.tall{height:960px}
+.win.tall{height:1000px}
+/* modo embutido (miniatura no índice): esconde a moldura do preview */
+.embed .pv-head,.embed .pv-note{display:none}
+.embed .pv-stage-wrap{padding:0}
 
 /* barra de abas · 44px */
 .tabbar{position:relative;height:44px;flex:none;display:flex;align-items:stretch;
@@ -110,7 +113,7 @@ svg{display:block;flex:none}
 .tabbar::after{content:"";position:absolute;left:0;right:0;bottom:0;height:1px;
   background:var(--ork-accent);z-index:1}          /* linha de foco do painel */
 .tabbar.noactive::after{background:var(--ork-border-subtle)}
-.tab{position:relative;width:200px;height:44px;display:grid;
+.tab{position:relative;width:240px;height:44px;display:grid;
   grid-template-columns:24px 1fr auto auto;column-gap:var(--ork-space-8);
   align-items:center;padding:0 var(--ork-space-8) 0 var(--ork-space-12);
   text-align:left;color:var(--ork-text-secondary);
@@ -130,7 +133,7 @@ svg{display:block;flex:none}
 .tab .rail{position:absolute;left:0;right:0;bottom:0;height:2px;overflow:hidden;z-index:3}
 .tab .rail i{display:block;height:100%;width:100%}
 .tab .rail.run i{width:24px;background:var(--ork-accent);animation:rail var(--ork-dur-loop) linear infinite}
-@keyframes rail{from{transform:translateX(-24px)}to{transform:translateX(200px)}}
+@keyframes rail{from{transform:translateX(-24px)}to{transform:translateX(240px)}}
 .tab.sel{background:var(--ork-bg-terminal);color:var(--ork-text-primary);z-index:2;
   border-radius:var(--ork-r-md) var(--ork-r-md) 0 0}
 .tab.sel::before{content:"";position:absolute;left:0;right:0;top:0;height:2px;background:var(--ork-accent);
@@ -195,7 +198,8 @@ kbd{font:400 11px/14px var(--ork-font-mono);letter-spacing:.02em;color:var(--ork
 /* ---------- scrim, modal e popover ---------- */
 .scrim{position:absolute;inset:0;background:var(--ork-scrim);display:flex;
   align-items:center;justify-content:center;z-index:10}
-.modal{width:560px;max-height:80%;display:flex;flex-direction:column;
+/* spec: max-height 80vh com corpo rolável; no preview fica sem limite para mostrar o conteúdo todo */
+.modal{width:560px;max-height:none;display:flex;flex-direction:column;
   background:var(--ork-bg-surface);border-radius:var(--ork-r-xl);box-shadow:var(--ork-shadow-modal)}
 .m-head{flex:none;padding:var(--ork-space-24) var(--ork-space-24) var(--ork-space-16);
   border-bottom:1px solid var(--ork-border-subtle);position:relative}
@@ -221,8 +225,8 @@ kbd{font:400 11px/14px var(--ork-font-mono);letter-spacing:.02em;color:var(--ork
 .card[aria-disabled="true"]{border-color:var(--ork-border);color:var(--ork-text-disabled);cursor:not-allowed}
 .card[aria-disabled="true"] svg{color:var(--ork-text-disabled)}
 .card[aria-disabled="true"]:hover{background:transparent}
-.card .tag{margin-left:auto;font:400 11px/14px var(--ork-font-mono);letter-spacing:.02em;
-  color:var(--ork-text-tertiary)}
+.card .lbl{display:flex;flex-direction:column;line-height:14px;white-space:nowrap}
+.card .tag{font:400 11px/14px var(--ork-font-mono);letter-spacing:.02em;color:var(--ork-text-tertiary)}
 .field{height:32px;width:100%;display:flex;align-items:center;gap:var(--ork-space-8);
   padding:0 var(--ork-space-12);background:var(--ork-bg-surface);
   border:1px solid var(--ork-border-control);border-radius:var(--ork-r-md);color:var(--ork-text-primary)}
@@ -445,7 +449,7 @@ kbd{font:400 11px/14px var(--ork-font-mono);letter-spacing:.02em;color:var(--ork
                 <button class="card" role="radio" aria-checked="true"><svg><use href="#u-prompt"/></svg>Claude Code</button>
                 <button class="card" role="radio" aria-checked="false"><svg><use href="#u-prompt"/></svg>Codex</button>
                 <button class="card" role="radio" aria-checked="false"><svg><use href="#u-prompt"/></svg>OpenCode</button>
-                <button class="card" role="radio" aria-checked="false" aria-disabled="true"><svg><use href="#u-prompt"/></svg>Gemini CLI<span class="tag">não instalado</span></button>
+                <button class="card" role="radio" aria-checked="false" aria-disabled="true"><svg><use href="#u-prompt"/></svg><span class="lbl">Gemini CLI<span class="tag">não instalado</span></span></button>
               </div>
             </div>
             <div class="row"><label>Modelo</label>
@@ -600,18 +604,20 @@ kbd{font:400 11px/14px var(--ork-font-mono);letter-spacing:.02em;color:var(--ork
 
 <script>
 (function(){
+  try{if(self!==top)document.documentElement.classList.add('embed')}catch(e){document.documentElement.classList.add('embed')}
   var notes={
     main:"Tela 1 — 5 abas, uma por estado: atlas (executando, ativa, Maestro ◆), revisor (concluído, com marca de nova saída), build (bloqueado), docs (ocioso), api (falhou). Aba ativa fundida ao terminal, linha de topo ciano de 2px e trilho de estado de 2px. Passe o mouse nas abas para ver hover e ×.",
-    modal:"Tela 2 — modal 560px sobre a janela com scrim. Palco de 960px de altura para mostrar o corpo inteiro; em janelas menores o corpo rola (cabeçalho e rodapé fixos). Mostra: CLI selecionado, CLI desabilitado (não instalado), foco visível em Nome, ícone e cor selecionados.",
+    modal:"Tela 2 — modal 560px sobre a janela com scrim. Aqui sem limite de altura para mostrar o conteúdo inteiro; na implementação vale max-height 80vh com corpo rolável (cabeçalho e rodapé fixos). Mostra: CLI selecionado, CLI desabilitado (não instalado), foco visível em Nome, ícone e cor selecionados.",
     empty:"Tela 3 — estado vazio: sem agentes, apenas o botão + e o botão primário 'Novo agente' com atalho. Sem ilustração.",
     plus:"Extra (não pedido) — popover do botão +, com 'Novo agente…', 'Abrir agente salvo' e a lista de agentes salvos. Única sombra além do modal."
   };
   var btns=document.querySelectorAll('.pv-nav button');
   function fit(){
     var wrap=document.getElementById('wrap'),st=document.getElementById('stage');
-    var avail=wrap.clientWidth-48; var s=Math.min(1,avail/1280); if(s<=0)s=1;
+    var emb=document.documentElement.classList.contains('embed');
+    var avail=wrap.clientWidth-(emb?0:48); var s=Math.min(1,avail/1280); if(s<=0)s=1;
     st.style.transform='scale('+s+')';
-    wrap.style.height=(st.offsetHeight*s+32)+'px';
+    wrap.style.height=(st.offsetHeight*s+(emb?0:32))+'px';
   }
   function show(v){
     document.querySelectorAll('.view').forEach(function(e){e.classList.toggle('on',e.id==='v-'+v)});

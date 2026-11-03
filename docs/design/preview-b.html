@@ -1,0 +1,527 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Orkest — Preview Direção B "Strata"</title>
+<style>
+/* =====================================================================
+   Orkest · Direção B "Strata" · preview estático (ORKEST-004b)
+   Valores de §2 (azul-ardósia, acento latão, grotesca, camadas, luz).
+   Neutros/acento de B são PROPOSTA deste preview (a spec descreve, não
+   tabela, os hex de B). Estados, identidade e ANSI reutilizam a §3/§4.4.
+   Hex só dentro de :root. Sem backdrop-filter (risco webkit2gtk).
+   ===================================================================== */
+:root{
+  /* camadas azul-ardósia */
+  --sb-bg-canvas:#0B0E14;
+  --sb-bg-layer1:#111724;
+  --sb-bg-layer2:#141925;
+  --sb-bg-layer3:#1B2232;
+  --sb-bg-layer4:#232C40;
+  --sb-bg-terminal:#080B10;
+  --sb-border-subtle:#1E2638;
+  --sb-border:#2A3448;
+  --sb-border-control:#6B7893;
+  --sb-light:rgba(255,255,255,.07);        /* borda superior de luz */
+  --sb-light-strong:rgba(255,255,255,.12);
+  /* texto */
+  --sb-text-primary:#E4E9F2;
+  --sb-text-secondary:#9DA8BC;
+  --sb-text-tertiary:#8A95AB;
+  /* acento latão e estados */
+  --sb-accent:#D9A93F;
+  --sb-accent-hover:#E6BC5C;
+  --sb-accent-subtle:rgba(217,169,63,.14);
+  --sb-on-accent:#1A1304;
+  --sb-success:#5DC47E;
+  --sb-attention:#F08A4B;                  /* B: laranja p/ não colidir com o latão */
+  --sb-error:#EE6B63;
+  --sb-neutral:#8A95AB;
+  --sb-scrim:rgba(5,7,11,.62);
+  /* identidade do agente (§3.3) */
+  --ork-id-blue:#7AA7F0; --ork-id-lilac:#B38DEB; --ork-id-pink:#E58BB0; --ork-id-orange:#F0A06A;
+  --ork-id-sand:#D9C36A; --ork-id-sage:#8CCB8C; --ork-id-aqua:#6FCFC4; --ork-id-stone:#B5B9C2;
+  /* terminal (§4.4) */
+  --ork-term-fg:#D7DAE0;
+  --ork-term-selection:rgba(217,169,63,.28);
+  --ork-ansi-bright-black:#7A808A; --ork-ansi-green:#5DC47E; --ork-ansi-yellow:#E8B04A;
+  --ork-ansi-cyan:#4CC3D9; --ork-ansi-blue:#6C9EF0; --ork-ansi-white:#C9CED6;
+  /* tipografia: grotesca geométrica + mono */
+  --sb-font-ui:"Space Grotesk", system-ui, sans-serif;
+  --sb-font-mono:"JetBrains Mono", ui-monospace, "DejaVu Sans Mono", monospace;
+  /* espaçamento base 4 */
+  --sb-s4:4px; --sb-s6:6px; --sb-s8:8px; --sb-s12:12px; --sb-s16:16px; --sb-s20:20px; --sb-s24:24px; --sb-s32:32px;
+  /* raios 8–14 */
+  --sb-r-sm:6px; --sb-r-md:8px; --sb-r-lg:10px; --sb-r-xl:12px; --sb-r-2xl:14px;
+  /* sombras em 3 níveis */
+  --sb-sh1:0 1px 2px rgba(0,0,0,.45);
+  --sb-sh2:0 4px 14px rgba(0,0,0,.42);
+  --sb-sh3:0 20px 48px rgba(0,0,0,.55);
+  /* movimento espacial */
+  --sb-dur:280ms; --sb-ease:cubic-bezier(.2,.8,.2,1);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:var(--sb-bg-canvas);color:var(--sb-text-primary);font:400 14px/20px var(--sb-font-ui);-webkit-font-smoothing:antialiased}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+:focus-visible{outline:2px solid var(--sb-accent);outline-offset:2px}
+svg{display:block;flex:none}
+.ico{fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+
+/* moldura da página de preview */
+.pv-head{display:flex;align-items:center;gap:var(--sb-s16);flex-wrap:wrap;padding:var(--sb-s12) var(--sb-s24);
+  background:var(--sb-bg-layer1);border-bottom:1px solid var(--sb-border-subtle)}
+.pv-head h1{font-size:14px;line-height:20px;font-weight:600}
+.pv-head .sub{color:var(--sb-text-tertiary);font-size:12px;line-height:16px}
+.pv-head a{color:var(--sb-accent);text-decoration:none;font-size:12px}
+.pv-nav{display:flex;gap:var(--sb-s4);margin-left:auto}
+.pv-nav button{height:32px;padding:0 var(--sb-s12);border-radius:var(--sb-r-md);color:var(--sb-text-secondary);font-weight:500}
+.pv-nav button:hover{background:var(--sb-bg-layer4);color:var(--sb-text-primary)}
+.pv-nav button[aria-pressed="true"]{background:var(--sb-accent-subtle);color:var(--sb-accent)}
+.pv-note{padding:var(--sb-s12) var(--sb-s24);color:var(--sb-text-tertiary);font-size:12px;line-height:16px}
+.pv-stage-wrap{padding:0 var(--sb-s24) var(--sb-s32);overflow:hidden}
+.pv-stage{transform-origin:0 0;width:1280px}
+.view{display:none}.view.on{display:block}
+
+/* janela */
+.win{position:relative;width:1280px;height:760px;display:flex;gap:var(--sb-s12);padding:var(--sb-s12);
+  background:linear-gradient(180deg,var(--sb-bg-layer1),var(--sb-bg-canvas) 45%);
+  border:1px solid var(--sb-border);border-radius:var(--sb-r-2xl);overflow:hidden}
+.win.tall{height:1020px}
+/* modo embutido (miniatura no índice) */
+.embed .pv-head,.embed .pv-note{display:none}
+.embed .pv-stage-wrap{padding:0}
+
+/* trilho de agentes */
+.rail{width:248px;flex:none;display:flex;flex-direction:column;gap:var(--sb-s8)}
+.rail-h{display:flex;align-items:center;justify-content:space-between;height:40px;padding:0 var(--sb-s4) 0 var(--sb-s8)}
+.brand{display:flex;align-items:center;gap:var(--sb-s8);font-weight:600;font-size:15px;letter-spacing:.01em}
+.brand i{width:10px;height:10px;border-radius:3px;background:var(--sb-accent);display:block;transform:rotate(45deg)}
+.addbtn{width:32px;height:32px;display:grid;place-items:center;border-radius:var(--sb-r-md);color:var(--sb-text-secondary);
+  border:1px solid var(--sb-border);background:var(--sb-bg-layer2);box-shadow:var(--sb-sh1)}
+.addbtn:hover{background:var(--sb-bg-layer4);color:var(--sb-text-primary)}
+.addbtn[aria-expanded="true"]{color:var(--sb-accent);border-color:var(--sb-accent)}
+.addbtn svg{width:16px;height:16px}
+.list{display:flex;flex-direction:column;gap:var(--sb-s8);flex:1;min-height:0}
+.card{position:relative;display:grid;grid-template-columns:36px 1fr auto;column-gap:var(--sb-s12);align-items:center;text-align:left;
+  padding:var(--sb-s12);border-radius:var(--sb-r-lg);background:var(--sb-bg-layer2);border:1px solid var(--sb-border-subtle);
+  box-shadow:inset 0 1px 0 var(--sb-light), var(--sb-sh1);transition:background var(--sb-dur) var(--sb-ease), transform var(--sb-dur) var(--sb-ease)}
+.card:hover{background:var(--sb-bg-layer3)}
+.card .tile{grid-row:1 / span 2}
+.card .nm{display:flex;align-items:center;gap:var(--sb-s6);font-weight:600;font-size:14px;line-height:18px;align-self:end}
+.card .mt{font:400 11px/14px var(--sb-font-mono);color:var(--sb-text-tertiary);align-self:start;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.card .gs{grid-column:3;grid-row:1 / span 2}
+.card .act{grid-column:1 / -1;margin-top:var(--sb-s8);display:flex;align-items:center;gap:var(--sb-s6);
+  font-size:12px;line-height:16px;color:var(--sb-text-secondary)}
+.card .act b{font-weight:500;color:var(--c)}
+.card.sel{background:var(--sb-bg-layer3);border-color:var(--sb-border);box-shadow:inset 0 1px 0 var(--sb-light-strong), var(--sb-sh2);transform:translateX(4px)}
+.card.sel::before{content:"";position:absolute;left:-1px;top:12px;bottom:12px;width:3px;border-radius:0 3px 3px 0;background:var(--sb-accent)}
+.mk{width:8px;height:8px;color:var(--sb-text-secondary)}
+.unseen{width:6px;height:6px;border-radius:50%;background:var(--sb-accent);display:inline-block}
+.rail-f{height:32px;display:flex;align-items:center;padding:0 var(--sb-s8);color:var(--sb-text-tertiary);font:400 11px/14px var(--sb-font-mono)}
+
+.tile{width:36px;height:36px;border-radius:var(--sb-r-lg);display:grid;place-items:center;color:var(--c);
+  background:color-mix(in srgb, var(--c) 16%, transparent);box-shadow:inset 0 1px 0 var(--sb-light)}
+.tile svg{width:20px;height:20px}
+.tile.sm{width:28px;height:28px;border-radius:var(--sb-r-md)}.tile.sm svg{width:16px;height:16px}
+
+/* glifos de estado */
+.g{width:14px;height:14px;fill:none;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+.g-idle{stroke:var(--sb-neutral)}
+.g-run{stroke:var(--sb-accent);animation:spin 900ms linear infinite;transform-origin:50% 50%}
+.g-done circle{fill:var(--sb-success);stroke:none}.g-done path{stroke:var(--sb-bg-canvas)}
+.g-block{stroke:var(--sb-attention)}
+.g-fail{stroke:var(--sb-error)}
+@keyframes spin{to{transform:rotate(360deg)}}
+.pill{display:inline-flex;align-items:center;gap:var(--sb-s6);height:24px;padding:0 var(--sb-s8);border-radius:var(--sb-r-sm);
+  font-size:12px;font-weight:500;color:var(--c);background:color-mix(in srgb, var(--c) 14%, transparent)}
+
+/* lâmina do terminal */
+.blade{flex:1;min-width:0;display:flex;flex-direction:column;background:var(--sb-bg-terminal);border-radius:var(--sb-r-xl);
+  border:1px solid var(--sb-border);box-shadow:inset 0 1px 0 var(--sb-light-strong), var(--sb-sh3);overflow:hidden}
+.blade-h{height:52px;flex:none;display:flex;align-items:center;gap:var(--sb-s12);padding:0 var(--sb-s16);
+  background:var(--sb-bg-layer1);border-bottom:1px solid var(--sb-border-subtle)}
+.blade-h .ti{display:flex;flex-direction:column}
+.blade-h .ti b{font-weight:600;font-size:14px;line-height:18px;display:flex;align-items:center;gap:var(--sb-s6)}
+.blade-h .ti span{font:400 11px/14px var(--sb-font-mono);color:var(--sb-text-tertiary)}
+.blade-h .sp{flex:1}
+.term{position:relative;flex:1;min-height:0;padding:var(--sb-s12) var(--sb-s16);overflow:hidden}
+.term pre{font:400 13px/16.25px var(--sb-font-mono);color:var(--ork-term-fg);white-space:pre;font-variant-ligatures:none}
+.a-dim{color:var(--ork-ansi-bright-black)}.a-g{color:var(--ork-ansi-green)}.a-y{color:var(--ork-ansi-yellow)}
+.a-c{color:var(--ork-ansi-cyan)}.a-b{color:var(--ork-ansi-blue)}.a-w{color:var(--ork-ansi-white)}
+.sel-t{background:var(--ork-term-selection)}
+.cur{display:inline-block;width:.6em;height:1.15em;vertical-align:-.2em;background:var(--sb-accent)}
+.ctx{height:28px;flex:none;display:flex;align-items:center;gap:var(--sb-s16);padding:0 var(--sb-s16);background:var(--sb-bg-layer1);
+  border-top:1px solid var(--sb-border-subtle);font:400 11px/14px var(--sb-font-mono);color:var(--sb-text-tertiary)}
+.ctx .sp{flex:1}
+
+/* botões / campos */
+.btn{height:36px;padding:0 var(--sb-s16);border-radius:var(--sb-r-md);font-weight:600;font-size:14px;display:inline-flex;align-items:center;gap:var(--sb-s8)}
+.btn.primary{background:var(--sb-accent);color:var(--sb-on-accent);box-shadow:inset 0 1px 0 var(--sb-light-strong), var(--sb-sh1)}
+.btn.primary:hover{background:var(--sb-accent-hover)}
+.btn.secondary{border:1px solid var(--sb-border-control);color:var(--sb-text-primary)}
+.btn.secondary:hover{background:var(--sb-bg-layer4)}
+kbd{font:400 11px/14px var(--sb-font-mono);color:var(--sb-text-tertiary);border:1px solid var(--sb-border);border-radius:var(--sb-r-sm);padding:2px var(--sb-s6)}
+
+/* modal */
+.scrim{position:absolute;inset:0;background:var(--sb-scrim);display:flex;align-items:center;justify-content:center;z-index:10}
+/* preview sem limite de altura para mostrar o conteúdo inteiro; implementação: 80vh + corpo rolável */
+.modal{width:560px;max-height:none;display:flex;flex-direction:column;background:var(--sb-bg-layer2);border-radius:var(--sb-r-2xl);
+  border:1px solid var(--sb-border);box-shadow:inset 0 1px 0 var(--sb-light-strong), var(--sb-sh3)}
+.m-head{flex:none;position:relative;padding:var(--sb-s24) var(--sb-s24) var(--sb-s16);border-bottom:1px solid var(--sb-border-subtle)}
+.m-head h2{font-size:20px;line-height:26px;font-weight:600}
+.m-head p{color:var(--sb-text-secondary);margin-top:var(--sb-s4);font-size:13px}
+.m-x{position:absolute;right:var(--sb-s16);top:var(--sb-s16);width:28px;height:28px;display:grid;place-items:center;border-radius:var(--sb-r-md);color:var(--sb-text-secondary)}
+.m-x:hover{background:var(--sb-bg-layer4);color:var(--sb-text-primary)}
+.m-body{flex:1;min-height:0;overflow:auto;padding:var(--sb-s20) var(--sb-s24) var(--sb-s24)}
+.sec+.sec{margin-top:var(--sb-s24)}
+.sec h3{font-size:12px;line-height:16px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--sb-text-tertiary);margin-bottom:var(--sb-s12)}
+.row{display:grid;grid-template-columns:88px 1fr;column-gap:var(--sb-s16);align-items:start}
+.row+.row{margin-top:var(--sb-s16)}
+.row>label{font-size:13px;line-height:16px;font-weight:500;color:var(--sb-text-secondary);padding-top:var(--sb-s12)}
+.clis{display:grid;grid-template-columns:1fr 1fr;gap:var(--sb-s8)}
+.opt{height:44px;border:1px solid var(--sb-border-control);border-radius:var(--sb-r-lg);display:flex;align-items:center;gap:var(--sb-s8);
+  padding:0 var(--sb-s12);text-align:left;font-weight:500;background:var(--sb-bg-layer1)}
+.opt svg{width:16px;height:16px;color:var(--sb-text-secondary)}
+.opt:hover{background:var(--sb-bg-layer4)}
+.opt[aria-checked="true"]{border:1.5px solid var(--sb-accent);background:var(--sb-accent-subtle);box-shadow:inset 0 1px 0 var(--sb-light)}
+.opt[aria-checked="true"] svg{color:var(--sb-accent)}
+.opt[aria-disabled="true"]{border-color:var(--sb-border);color:var(--sb-text-tertiary);cursor:not-allowed;background:transparent}
+.opt .lbl{display:flex;flex-direction:column;line-height:14px;white-space:nowrap}
+.opt .tag{font:400 11px/14px var(--sb-font-mono);color:var(--sb-text-tertiary)}
+.field{height:40px;width:100%;display:flex;align-items:center;gap:var(--sb-s8);padding:0 var(--sb-s12);background:var(--sb-bg-layer1);
+  border:1px solid var(--sb-border-control);border-radius:var(--sb-r-md)}
+.field.mono{font:400 13px/16px var(--sb-font-mono)}
+.field .grow{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.field svg{width:16px;height:16px;color:var(--sb-text-secondary)}
+.field.focus{border-color:var(--sb-accent);outline:2px solid var(--sb-accent);outline-offset:2px}
+.hint{font-size:12px;line-height:16px;color:var(--sb-text-tertiary);margin-top:var(--sb-s6)}
+.inline{display:flex;gap:var(--sb-s8)}.inline .field{flex:1}
+.glyphs{display:grid;grid-template-columns:repeat(8,36px);gap:var(--sb-s4)}
+.gl{width:36px;height:36px;display:grid;place-items:center;border-radius:var(--sb-r-md);border:1px solid transparent;color:var(--sb-text-secondary)}
+.gl svg{width:18px;height:18px}
+.gl:hover{background:var(--sb-bg-layer4);color:var(--sb-text-primary)}
+.gl[aria-checked="true"]{border:1.5px solid var(--sb-accent);background:var(--sb-accent-subtle);color:var(--ork-id-blue)}
+.swatches{display:flex;gap:var(--sb-s8);margin-top:var(--sb-s12);align-items:center}
+.sw{width:16px;height:16px;border-radius:50%;background:var(--c)}
+.sw[aria-checked="true"]{outline:2px solid var(--sb-text-primary);outline-offset:2px}
+.prev{margin-left:auto;display:flex;align-items:center;gap:var(--sb-s8);color:var(--sb-text-tertiary);font-size:12px}
+.seg{display:inline-flex;border:1px solid var(--sb-border-control);border-radius:var(--sb-r-md);padding:2px;background:var(--sb-bg-layer1)}
+.seg button{height:32px;padding:0 var(--sb-s16);border-radius:var(--sb-r-sm);color:var(--sb-text-secondary);font-weight:500}
+.seg button[aria-checked="true"]{background:var(--sb-bg-layer4);color:var(--sb-text-primary);box-shadow:inset 0 1px 0 var(--sb-light), var(--sb-sh1)}
+.rolebox{margin-top:var(--sb-s8);padding:var(--sb-s8) var(--sb-s12);background:var(--sb-bg-terminal);border-radius:var(--sb-r-md);
+  font:400 11px/16px var(--sb-font-mono);color:var(--sb-text-secondary)}
+.lnk{display:inline-block;margin-top:var(--sb-s6);font-size:12px;color:var(--sb-accent);text-decoration:none}
+.m-foot{flex:none;display:flex;justify-content:flex-end;gap:var(--sb-s8);padding:var(--sb-s16) var(--sb-s24);border-top:1px solid var(--sb-border-subtle)}
+
+/* popover do + */
+.addwrap{position:relative}
+.pop{position:absolute;top:calc(100% + 6px);left:0;width:280px;z-index:20;background:var(--sb-bg-layer3);border:1px solid var(--sb-border);
+  border-radius:var(--sb-r-lg);box-shadow:inset 0 1px 0 var(--sb-light-strong), var(--sb-sh3);padding:var(--sb-s4)}
+.pop .it{width:100%;height:40px;display:flex;align-items:center;gap:var(--sb-s8);padding:0 var(--sb-s8);border-radius:var(--sb-r-md);text-align:left}
+.pop .it:hover,.pop .it.hl{background:var(--sb-bg-layer4)}
+.pop .it svg.ico{width:16px;height:16px;color:var(--sb-text-secondary)}
+.pop .it kbd{margin-left:auto}
+.pop hr{border:0;border-top:1px solid var(--sb-border-subtle);margin:var(--sb-s4) 0}
+.pop .cap{padding:var(--sb-s6) var(--sb-s8) var(--sb-s4);font-size:12px;color:var(--sb-text-tertiary)}
+.pop .sv{height:48px;display:grid;grid-template-columns:28px 1fr auto;column-gap:var(--sb-s8);align-items:center;padding:0 var(--sb-s8);border-radius:var(--sb-r-md);width:100%;text-align:left}
+.pop .sv:hover{background:var(--sb-bg-layer4)}
+.pop .sv .tile{grid-row:1 / span 2}
+.pop .sv .a{font-weight:600;line-height:16px;align-self:end}
+.pop .sv .b{font:400 11px/14px var(--sb-font-mono);color:var(--sb-text-tertiary);align-self:start}
+.pop .sv .g{grid-column:3;grid-row:1 / span 2}
+
+/* vazio */
+.empty-r{flex:1;display:flex;align-items:center;justify-content:center;border:1px dashed var(--sb-border);border-radius:var(--sb-r-lg);
+  color:var(--sb-text-tertiary);font-size:12px;text-align:center;padding:var(--sb-s16)}
+.empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}
+.empty h2{font-size:22px;line-height:28px;font-weight:600}
+.empty p{color:var(--sb-text-secondary);margin:var(--sb-s8) 0 var(--sb-s24);max-width:360px}
+.empty .sc{margin-top:var(--sb-s12)}
+
+@media (prefers-reduced-motion:reduce){.g-run{animation:none}*{transition-duration:0ms!important}}
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="a-circle" viewBox="0 0 16 16"><circle cx="8" cy="8" r="5" class="ico"/></symbol>
+  <symbol id="a-square" viewBox="0 0 16 16"><rect x="3" y="3" width="10" height="10" rx="1.5" class="ico"/></symbol>
+  <symbol id="a-triangle" viewBox="0 0 16 16"><path d="M8 3 13.5 12.5H2.5Z" class="ico"/></symbol>
+  <symbol id="a-diamond" viewBox="0 0 16 16"><path d="M8 2.5 13.5 8 8 13.5 2.5 8Z" class="ico"/></symbol>
+  <symbol id="a-hexagon" viewBox="0 0 16 16"><path d="M8 2 13 5v6L8 14 3 11V5Z" class="ico"/></symbol>
+  <symbol id="a-arc" viewBox="0 0 16 16"><path d="M3 11a5 5 0 0 1 10 0" class="ico"/></symbol>
+  <symbol id="a-lines" viewBox="0 0 16 16"><path d="M4 3v10M8 3v10M12 3v10" class="ico"/></symbol>
+  <symbol id="a-cross" viewBox="0 0 16 16"><path d="M8 3v10M3 8h10" class="ico"/></symbol>
+  <symbol id="a-dotring" viewBox="0 0 16 16"><circle cx="8" cy="8" r="5" class="ico"/><circle cx="8" cy="8" r="1.2" fill="currentColor"/></symbol>
+  <symbol id="a-wave" viewBox="0 0 16 16"><path d="M2 8c2-4 4-4 6 0s4 4 6 0" class="ico"/></symbol>
+  <symbol id="a-staff" viewBox="0 0 16 16"><path d="M2 4h12M2 6h12M2 8h12M2 10h12M2 12h12" class="ico" stroke-width="1.25"/></symbol>
+  <symbol id="a-stairs" viewBox="0 0 16 16"><path d="M2 13h4V9h4V5h4" class="ico"/></symbol>
+  <symbol id="a-grid" viewBox="0 0 16 16"><rect x="3" y="3" width="4" height="4" rx=".8" class="ico"/><rect x="9" y="3" width="4" height="4" rx=".8" class="ico"/><rect x="3" y="9" width="4" height="4" rx=".8" class="ico"/><rect x="9" y="9" width="4" height="4" rx=".8" class="ico"/></symbol>
+  <symbol id="a-key" viewBox="0 0 16 16"><circle cx="5" cy="8" r="2.5" class="ico"/><path d="M7.5 8H14M12 8v2.5M10 8v2" class="ico"/></symbol>
+  <symbol id="a-orbit" viewBox="0 0 16 16"><ellipse cx="8" cy="8" rx="6" ry="2.5" transform="rotate(-30 8 8)" class="ico"/><circle cx="8" cy="8" r="1.4" fill="currentColor"/></symbol>
+  <symbol id="a-arrow" viewBox="0 0 16 16"><path d="M3 8h10M9 4l4 4-4 4" class="ico"/></symbol>
+  <symbol id="u-plus" viewBox="0 0 16 16"><path d="M8 3v10M3 8h10" class="ico"/></symbol>
+  <symbol id="u-x" viewBox="0 0 16 16"><path d="M4 4l8 8M12 4l-8 8" class="ico"/></symbol>
+  <symbol id="u-chev" viewBox="0 0 16 16"><path d="M4 6l4 4 4-4" class="ico"/></symbol>
+  <symbol id="u-right" viewBox="0 0 16 16"><path d="M6 4l4 4-4 4" class="ico"/></symbol>
+  <symbol id="u-folder" viewBox="0 0 16 16"><path d="M2 5.5V12a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1V6.5a1 1 0 0 0-1-1H8L6.5 4H3a1 1 0 0 0-1 1Z" class="ico"/></symbol>
+  <symbol id="u-prompt" viewBox="0 0 16 16"><path d="M3 4l4 4-4 4M9 12h4" class="ico"/></symbol>
+</svg>
+
+<header class="pv-head">
+  <div>
+    <h1>Orkest — Preview estático · Direção B "Strata"</h1>
+    <div class="sub">ORKEST-004b · conceito alternativo para comparação · <a href="preview-index.html">← índice</a> · <a href="preview-a.html">ver Direção A</a></div>
+  </div>
+  <nav class="pv-nav" aria-label="Telas do preview">
+    <button data-view="main" aria-pressed="true">1 · Janela principal</button>
+    <button data-view="modal" aria-pressed="false">2 · Modal de criação</button>
+    <button data-view="empty" aria-pressed="false">3 · Estado vazio</button>
+    <button data-view="plus" aria-pressed="false">Extra · Menu "+"</button>
+  </nav>
+</header>
+<p class="pv-note" id="note"></p>
+
+<div class="pv-stage-wrap" id="wrap"><div class="pv-stage" id="stage">
+
+<!-- ================= 1 · JANELA PRINCIPAL ================= -->
+<section class="view on" id="v-main" aria-label="Janela principal">
+  <div class="win">
+    <aside class="rail" aria-label="Agentes">
+      <div class="rail-h"><span class="brand"><i></i>Orkest</span>
+        <button class="addbtn" aria-label="Criar ou abrir agente" aria-haspopup="menu" aria-expanded="false"><svg><use href="#u-plus"/></svg></button></div>
+      <div class="list" role="tablist" aria-orientation="vertical">
+
+        <button class="card sel" role="tab" aria-selected="true" style="--c:var(--sb-accent)">
+          <span class="tile" style="--c:var(--ork-id-blue)"><svg><use href="#a-staff"/></svg></span>
+          <span class="nm">atlas<svg class="mk" viewBox="0 0 8 8"><path d="M4 .5 7.5 4 4 7.5.5 4Z" fill="currentColor"/></svg></span>
+          <span class="mt">claude · opus 5.5</span>
+          <span class="gs"><svg class="g g-run" viewBox="0 0 14 14"><path d="M7 1.75A5.25 5.25 0 1 1 1.75 7"/></svg></span>
+          <span class="act"><b>Executando</b> · escrevendo tokens.css</span>
+        </button>
+
+        <button class="card" role="tab" aria-selected="false" style="--c:var(--sb-success)">
+          <span class="tile" style="--c:var(--ork-id-lilac)"><svg><use href="#a-dotring"/></svg></span>
+          <span class="nm">revisor <span class="unseen" title="Nova saída"></span></span>
+          <span class="mt">codex · gpt-5</span>
+          <span class="gs"><svg class="g g-done" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6"/><path d="M4.25 7.25 6.25 9.25 9.75 5"/></svg></span>
+          <span class="act"><b>Concluído</b> · 4 comentários</span>
+        </button>
+
+        <button class="card" role="tab" aria-selected="false" style="--c:var(--sb-attention)">
+          <span class="tile" style="--c:var(--ork-id-orange)"><svg><use href="#a-hexagon"/></svg></span>
+          <span class="nm">build</span>
+          <span class="mt">opencode · deepseek v4 pro</span>
+          <span class="gs"><svg class="g g-block" viewBox="0 0 14 14"><path d="M7 1.75 12.75 11.75H1.25Z"/><path d="M7 5.5v2.75M7 10.1v.01"/></svg></span>
+          <span class="act"><b>Bloqueado</b> · aguarda aprovação</span>
+        </button>
+
+        <button class="card" role="tab" aria-selected="false" style="--c:var(--sb-neutral)">
+          <span class="tile" style="--c:var(--ork-id-sage)"><svg><use href="#a-lines"/></svg></span>
+          <span class="nm">docs</span>
+          <span class="mt">gemini · 2.5 pro</span>
+          <span class="gs"><svg class="g g-idle" viewBox="0 0 14 14"><circle cx="7" cy="7" r="5.25"/></svg></span>
+          <span class="act"><b>Ocioso</b> · há 12 min</span>
+        </button>
+
+        <button class="card" role="tab" aria-selected="false" style="--c:var(--sb-error)">
+          <span class="tile" style="--c:var(--ork-id-aqua)"><svg><use href="#a-orbit"/></svg></span>
+          <span class="nm">api</span>
+          <span class="mt">claude · sonnet 5.5</span>
+          <span class="gs"><svg class="g g-fail" viewBox="0 0 14 14"><rect x="1.75" y="1.75" width="10.5" height="10.5" rx="2.5"/><path d="M5 5l4 4M9 5l-4 4"/></svg></span>
+          <span class="act"><b>Falhou</b> · código de saída 1</span>
+        </button>
+      </div>
+      <div class="rail-f">5 agentes · 1 executando</div>
+    </aside>
+
+    <section class="blade" role="region" aria-label="Terminal de atlas">
+      <div class="blade-h">
+        <span class="tile sm" style="--c:var(--ork-id-blue)"><svg><use href="#a-staff"/></svg></span>
+        <div class="ti"><b>atlas <svg class="mk" viewBox="0 0 8 8"><path d="M4 .5 7.5 4 4 7.5.5 4Z" fill="currentColor"/></svg></b><span>claude · opus 5.5 · ~/Work/orkest</span></div>
+        <span class="sp"></span>
+        <span class="pill" style="--c:var(--sb-accent)"><svg class="g g-run" viewBox="0 0 14 14"><path d="M7 1.75A5.25 5.25 0 1 1 1.75 7"/></svg>Executando</span>
+      </div>
+      <div class="term">
+<pre><span class="a-g">rrattes</span><span class="a-dim">@</span><span class="a-b">orkest</span> <span class="a-c">~/Work/orkest</span> <span class="a-dim">$</span> claude --model opus
+<span class="a-dim">──────────────────────────────────────────────────────────────────────</span>
+<span class="a-c">●</span> Lendo <span class="a-w">docs/design/design-system.md</span>
+<span class="a-c">●</span> Lendo <span class="a-w">src/App.tsx</span>
+  <span class="a-dim">└ 2 arquivos · 612 linhas</span>
+
+<span class="a-g">✓</span> Tokens da §3 mapeados para <span class="a-w">theme.extend</span>
+<span class="a-g">✓</span> Fontes locais registradas <span class="a-dim">(Space Grotesk, JetBrains Mono)</span>
+<span class="a-c">●</span> Escrevendo <span class="a-w">src/styles/tokens.css</span> <span class="a-dim">(+148 −0)</span>
+
+<span class="a-y">▲</span> Aguardando aprovação do usuário para o comando abaixo:
+    <span class="sel-t">npm run tauri dev -- --no-watch</span>
+  <span class="a-dim">[y] aprovar   [n] negar   [e] editar</span>
+
+<span class="a-dim">&gt;</span> <span class="cur"></span></pre>
+      </div>
+      <div class="ctx"><span>~/Work/orkest</span><span class="sp"></span><span>sessão tmux orkest-a1f3</span><span>executando · 96×36</span></div>
+    </section>
+  </div>
+</section>
+
+<!-- ================= 2 · MODAL ================= -->
+<section class="view" id="v-modal" aria-label="Modal de criação de agente">
+  <div class="win tall">
+    <aside class="rail">
+      <div class="rail-h"><span class="brand"><i></i>Orkest</span><button class="addbtn" tabindex="-1"><svg><use href="#u-plus"/></svg></button></div>
+      <div class="list">
+        <div class="card sel" style="--c:var(--sb-neutral)"><span class="tile" style="--c:var(--ork-id-blue)"><svg><use href="#a-staff"/></svg></span><span class="nm">atlas<svg class="mk" viewBox="0 0 8 8"><path d="M4 .5 7.5 4 4 7.5.5 4Z" fill="currentColor"/></svg></span><span class="mt">claude · opus 5.5</span><span class="gs"><svg class="g g-idle" viewBox="0 0 14 14"><circle cx="7" cy="7" r="5.25"/></svg></span><span class="act"><b>Ocioso</b></span></div>
+      </div>
+    </aside>
+    <section class="blade"><div class="blade-h"><span class="tile sm" style="--c:var(--ork-id-blue)"><svg><use href="#a-staff"/></svg></span><div class="ti"><b>atlas</b><span>claude · opus 5.5 · ~/Work/orkest</span></div></div>
+      <div class="term"><pre><span class="a-g">rrattes</span><span class="a-dim">@</span><span class="a-b">orkest</span> <span class="a-c">~/Work/orkest</span> <span class="a-dim">$</span> <span class="cur"></span></pre></div>
+      <div class="ctx"><span>~/Work/orkest</span><span class="sp"></span><span>ocioso · 96×36</span></div></section>
+
+    <div class="scrim">
+      <div class="modal" role="dialog" aria-modal="true" aria-labelledby="m-title">
+        <div class="m-head"><h2 id="m-title">Novo agente</h2><p>Escolha o CLI, o modelo e o papel do agente.</p>
+          <button class="m-x" aria-label="Fechar"><svg width="16" height="16"><use href="#u-x"/></svg></button></div>
+        <div class="m-body">
+          <div class="sec"><h3>Execução</h3>
+            <div class="row"><label>CLI</label>
+              <div class="clis" role="radiogroup" aria-label="CLI">
+                <button class="opt" role="radio" aria-checked="true"><svg><use href="#u-prompt"/></svg>Claude Code</button>
+                <button class="opt" role="radio" aria-checked="false"><svg><use href="#u-prompt"/></svg>Codex</button>
+                <button class="opt" role="radio" aria-checked="false"><svg><use href="#u-prompt"/></svg>OpenCode</button>
+                <button class="opt" role="radio" aria-checked="false" aria-disabled="true"><svg><use href="#u-prompt"/></svg><span class="lbl">Gemini CLI<span class="tag">não instalado</span></span></button>
+              </div></div>
+            <div class="row"><label>Modelo</label><div><div class="field"><span class="grow">Padrão do CLI</span><svg><use href="#u-chev"/></svg></div></div></div>
+            <div class="row"><label>Workspace</label><div><div class="inline"><div class="field mono"><span class="grow">/home/rrattes/Work/orkest</span></div>
+              <button class="btn secondary"><svg width="16" height="16"><use href="#u-folder"/></svg>Procurar</button></div></div></div>
+          </div>
+          <div class="sec"><h3>Identidade</h3>
+            <div class="row"><label>Nome</label><div><div class="field focus"><span class="grow">atlas</span></div><div class="hint">Único entre os agentes. Sugestão: claude-1.</div></div></div>
+            <div class="row"><label>Ícone</label><div>
+              <div class="glyphs" role="radiogroup" aria-label="Ícone">
+                <button class="gl" role="radio" aria-checked="false" aria-label="círculo"><svg><use href="#a-circle"/></svg></button>
+                <button class="gl" role="radio" aria-checked="false" aria-label="quadrado"><svg><use href="#a-square"/></svg></button>
+                <button class="gl" role="radio" aria-checked="false" aria-label="triângulo"><svg><use href="#a-triangle"/></svg></button>
+                <button class="gl" role="radio" aria-checked="false" aria-label="losango"><svg><use href="#a-diamond"/></svg></button>
+                <button class="gl" role="radio" aria-checked="false" aria-label="hexágono"><svg><use href="#a-hexagon"/></svg></button>
+                <button class="gl" role="radio" aria-checked="false" aria-label="arco"><svg><use href="#a-arc"/></svg></button>
+                <button class="gl" role="radio" aria-checked="false" aria-label="linhas"><svg><use href="#a-lines"/></svg></button>
+                <button class="gl" role="radio" aria-checked="false" aria-label="cruz"><svg><use href="#a-cross"/></svg></button>
+                <button class="gl" role="radio" aria-checked="false" aria-label="ponto em anel"><svg><use href="#a-dotring"/></svg></button>
+                <button class="gl" role="radio" aria-checked="false" aria-label="onda"><svg><use href="#a-wave"/></svg></button>
+                <button class="gl" role="radio" aria-checked="true" aria-label="pauta"><svg><use href="#a-staff"/></svg></button>
+                <button class="gl" role="radio" aria-checked="false" aria-label="escada"><svg><use href="#a-stairs"/></svg></button>
+                <button class="gl" role="radio" aria-checked="false" aria-label="grade"><svg><use href="#a-grid"/></svg></button>
+                <button class="gl" role="radio" aria-checked="false" aria-label="chave"><svg><use href="#a-key"/></svg></button>
+                <button class="gl" role="radio" aria-checked="false" aria-label="órbita"><svg><use href="#a-orbit"/></svg></button>
+                <button class="gl" role="radio" aria-checked="false" aria-label="seta"><svg><use href="#a-arrow"/></svg></button>
+              </div>
+              <div class="swatches" role="radiogroup" aria-label="Cor de identidade">
+                <button class="sw" role="radio" aria-checked="true" aria-label="azul" style="--c:var(--ork-id-blue)"></button>
+                <button class="sw" role="radio" aria-checked="false" aria-label="lilás" style="--c:var(--ork-id-lilac)"></button>
+                <button class="sw" role="radio" aria-checked="false" aria-label="rosa" style="--c:var(--ork-id-pink)"></button>
+                <button class="sw" role="radio" aria-checked="false" aria-label="laranja" style="--c:var(--ork-id-orange)"></button>
+                <button class="sw" role="radio" aria-checked="false" aria-label="areia" style="--c:var(--ork-id-sand)"></button>
+                <button class="sw" role="radio" aria-checked="false" aria-label="sálvia" style="--c:var(--ork-id-sage)"></button>
+                <button class="sw" role="radio" aria-checked="false" aria-label="água" style="--c:var(--ork-id-aqua)"></button>
+                <button class="sw" role="radio" aria-checked="false" aria-label="pedra" style="--c:var(--ork-id-stone)"></button>
+                <span class="prev">pré-visualização <span class="tile sm" style="--c:var(--ork-id-blue)"><svg><use href="#a-staff"/></svg></span></span>
+              </div></div></div>
+            <div class="row"><label>Tipo</label><div>
+              <div class="seg" role="radiogroup" aria-label="Tipo"><button role="radio" aria-checked="true">Maestro</button><button role="radio" aria-checked="false">Especialista</button></div>
+              <div class="hint">Maestro coordena e delega; especialista executa tarefas recebidas.</div></div></div>
+          </div>
+          <div class="sec"><h3>Role</h3>
+            <div class="row"><label>Role</label><div>
+              <div class="field"><span class="grow">Arquiteto de interface</span><svg><use href="#u-chev"/></svg></div>
+              <div class="rolebox">Você coordena a equipe de agentes do Orkest.<br>Delegue por tarefa, valide entregas e<br>registre decisões antes de integrar…</div>
+              <a class="lnk" href="#" onclick="return false">Editar role</a></div></div>
+          </div>
+        </div>
+        <div class="m-foot"><button class="btn secondary">Cancelar</button><button class="btn primary">Criar agente</button></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= 3 · ESTADO VAZIO ================= -->
+<section class="view" id="v-empty" aria-label="Estado vazio">
+  <div class="win">
+    <aside class="rail">
+      <div class="rail-h"><span class="brand"><i></i>Orkest</span><button class="addbtn" aria-label="Criar ou abrir agente"><svg><use href="#u-plus"/></svg></button></div>
+      <div class="list"><div class="empty-r">Os agentes aparecem aqui como cartões.</div></div>
+      <div class="rail-f">0 agentes</div>
+    </aside>
+    <section class="blade">
+      <div class="empty">
+        <h2>Nenhum agente aberto</h2>
+        <p>Crie um agente para iniciar uma sessão de terminal real com o CLI de sua escolha.</p>
+        <button class="btn primary"><svg width="16" height="16"><use href="#u-plus"/></svg>Novo agente</button>
+        <div class="sc"><kbd>Ctrl+Shift+N</kbd></div>
+      </div>
+      <div class="ctx"><span>sem workspace</span><span class="sp"></span><span>—</span></div>
+    </section>
+  </div>
+</section>
+
+<!-- ================= EXTRA · MENU + ================= -->
+<section class="view" id="v-plus" aria-label="Menu do botão +">
+  <div class="win">
+    <aside class="rail">
+      <div class="rail-h"><span class="brand"><i></i>Orkest</span>
+        <div class="addwrap"><button class="addbtn" aria-label="Criar ou abrir agente" aria-haspopup="menu" aria-expanded="true"><svg><use href="#u-plus"/></svg></button>
+          <div class="pop" role="menu" style="left:-212px">
+            <button class="it hl" role="menuitem"><svg class="ico"><use href="#u-plus"/></svg>Novo agente…<kbd>Ctrl+Shift+N</kbd></button>
+            <button class="it" role="menuitem"><svg class="ico"><use href="#u-folder"/></svg>Abrir agente salvo<svg class="ico" style="margin-left:auto"><use href="#u-right"/></svg></button>
+            <hr><div class="cap">Agentes salvos</div>
+            <button class="sv" role="menuitem"><span class="tile sm" style="--c:var(--ork-id-sage)"><svg><use href="#a-lines"/></svg></span><span class="a">docs</span><span class="b">gemini · 2.5 pro</span><svg class="g g-idle" viewBox="0 0 14 14"><circle cx="7" cy="7" r="5.25"/></svg></button>
+            <button class="sv" role="menuitem"><span class="tile sm" style="--c:var(--ork-id-pink)"><svg><use href="#a-wave"/></svg></span><span class="a">pesquisa</span><span class="b">opencode · deepseek v4 pro</span><svg class="g g-idle" viewBox="0 0 14 14"><circle cx="7" cy="7" r="5.25"/></svg></button>
+          </div></div></div>
+      <div class="list">
+        <div class="card sel" style="--c:var(--sb-accent)"><span class="tile" style="--c:var(--ork-id-blue)"><svg><use href="#a-staff"/></svg></span><span class="nm">atlas<svg class="mk" viewBox="0 0 8 8"><path d="M4 .5 7.5 4 4 7.5.5 4Z" fill="currentColor"/></svg></span><span class="mt">claude · opus 5.5</span><span class="gs"><svg class="g g-run" viewBox="0 0 14 14"><path d="M7 1.75A5.25 5.25 0 1 1 1.75 7"/></svg></span><span class="act"><b>Executando</b> · escrevendo tokens.css</span></div>
+        <div class="card" style="--c:var(--sb-success)"><span class="tile" style="--c:var(--ork-id-lilac)"><svg><use href="#a-dotring"/></svg></span><span class="nm">revisor</span><span class="mt">codex · gpt-5</span><span class="gs"><svg class="g g-done" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6"/><path d="M4.25 7.25 6.25 9.25 9.75 5"/></svg></span><span class="act"><b>Concluído</b> · 4 comentários</span></div>
+      </div>
+    </aside>
+    <section class="blade">
+      <div class="blade-h"><span class="tile sm" style="--c:var(--ork-id-blue)"><svg><use href="#a-staff"/></svg></span><div class="ti"><b>atlas</b><span>claude · opus 5.5 · ~/Work/orkest</span></div></div>
+      <div class="term"><pre><span class="a-g">rrattes</span><span class="a-dim">@</span><span class="a-b">orkest</span> <span class="a-c">~/Work/orkest</span> <span class="a-dim">$</span> claude --model opus
+<span class="a-c">●</span> Lendo <span class="a-w">docs/design/design-system.md</span></pre></div>
+      <div class="ctx"><span>~/Work/orkest</span><span class="sp"></span><span>executando · 96×36</span></div>
+    </section>
+  </div>
+</section>
+
+</div></div>
+
+<script>
+(function(){
+  try{if(self!==top)document.documentElement.classList.add('embed')}catch(e){document.documentElement.classList.add('embed')}
+  var notes={
+    main:"Tela 1 — trilho vertical de cartões (248px): cada agente mostra ícone, nome, CLI·modelo, estado e atividade em uma linha. Cartão selecionado avança 4px, ganha luz na borda superior e barra latão. Terminal como lâmina elevada à direita, com cabeçalho do agente e pílula de estado.",
+    modal:"Tela 2 — modal 560px com raio 14, borda superior de luz e sombra de 3º nível, sem limite de altura neste preview (implementação: 80vh com corpo rolável). Mesmo conteúdo da Direção A, com campos de 40px e cartões de CLI de 44px.",
+    empty:"Tela 3 — estado vazio: trilho sem cartões (moldura tracejada) e lâmina com título, texto e botão primário latão.",
+    plus:"Extra — popover do botão + no cabeçalho do trilho."
+  };
+  var btns=document.querySelectorAll('.pv-nav button');
+  function fit(){
+    var wrap=document.getElementById('wrap'),st=document.getElementById('stage');
+    var emb=document.documentElement.classList.contains('embed');
+    var s=Math.min(1,(wrap.clientWidth-(emb?0:48))/1280); if(s<=0)s=1;
+    st.style.transform='scale('+s+')';
+    wrap.style.height=(st.offsetHeight*s+(emb?0:32))+'px';
+  }
+  function show(v){
+    document.querySelectorAll('.view').forEach(function(e){e.classList.toggle('on',e.id==='v-'+v)});
+    btns.forEach(function(b){b.setAttribute('aria-pressed',b.dataset.view===v?'true':'false')});
+    document.getElementById('note').textContent=notes[v]||'';
+    try{history.replaceState(null,'','#'+v)}catch(e){}
+    fit();
+  }
+  btns.forEach(function(b){b.addEventListener('click',function(){show(b.dataset.view)})});
+  window.addEventListener('resize',fit);
+  var h=(location.hash||'').slice(1);
+  show(notes[h]?h:'main');
+})();
+</script>
+</body>
+</html>

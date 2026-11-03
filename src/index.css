@@ -1,0 +1,869 @@
+@import "tailwindcss";
+
+/* ============================================================================
+   Orkest — tokens (Direção A "Partitura", §3). Fonte única de valores.
+   Hexadecimais vivem apenas aqui; componentes referenciam `var(--ork-*)`.
+   ============================================================================ */
+
+:root {
+  /* Superfícies e bordas (§3.1) */
+  --ork-bg-canvas: #0f1012;
+  --ork-bg-chrome: #151619;
+  --ork-bg-surface: #1b1d21;
+  --ork-bg-raised: #222529;
+  --ork-bg-hover: #2a2d32;
+  --ork-bg-terminal: #0c0d0f;
+  --ork-border-subtle: #25282d;
+  --ork-border: #32363c;
+  --ork-border-control: #70767f;
+  --ork-border-control-dim: rgba(112, 118, 127, 0.6);
+
+  /* Texto (§3.2) */
+  --ork-text-primary: #e6e8eb;
+  --ork-text-secondary: #a3a9b2;
+  --ork-text-tertiary: #8a919b;
+  --ork-text-disabled: #5c626a;
+  --ork-text-on-accent: #07181c;
+  --ork-text-terminal: #d7dae0;
+
+  /* Acento e estados (§3.3) */
+  --ork-accent: #4cc3d9;
+  --ork-accent-hover: #6fd3e5;
+  --ork-accent-subtle: rgba(76, 195, 217, 0.14);
+  --ork-success: #5dc47e;
+  --ork-success-subtle: rgba(93, 196, 126, 0.14);
+  --ork-attention: #e8b04a;
+  --ork-attention-subtle: rgba(232, 176, 74, 0.14);
+  --ork-error: #ee6b63;
+  --ork-error-subtle: rgba(238, 107, 99, 0.14);
+  --ork-neutral: #8a919b;
+  --ork-selection: rgba(76, 195, 217, 0.28);
+
+  /* Identidade do agente (§3.3) — 8 matizes */
+  --ork-identity-blue: #7aa7f0;
+  --ork-identity-blue-subtle: rgba(122, 167, 240, 0.16);
+  --ork-identity-lilac: #b38deb;
+  --ork-identity-lilac-subtle: rgba(179, 141, 235, 0.16);
+  --ork-identity-pink: #e58bb0;
+  --ork-identity-pink-subtle: rgba(229, 139, 176, 0.16);
+  --ork-identity-orange: #f0a06a;
+  --ork-identity-orange-subtle: rgba(240, 160, 106, 0.16);
+  --ork-identity-sand: #d9c36a;
+  --ork-identity-sand-subtle: rgba(217, 195, 106, 0.16);
+  --ork-identity-sage: #8ccb8c;
+  --ork-identity-sage-subtle: rgba(140, 203, 140, 0.16);
+  --ork-identity-aqua: #6fcfc4;
+  --ork-identity-aqua-subtle: rgba(111, 207, 196, 0.16);
+  --ork-identity-stone: #b5b9c2;
+  --ork-identity-stone-subtle: rgba(181, 185, 194, 0.16);
+
+  /* Paleta ANSI (tema xterm, §4.4) */
+  --ork-ansi-black: #3a3f47;
+  --ork-ansi-red: #ee6b63;
+  --ork-ansi-green: #5dc47e;
+  --ork-ansi-yellow: #e8b04a;
+  --ork-ansi-blue: #6c9ef0;
+  --ork-ansi-magenta: #c08be8;
+  --ork-ansi-cyan: #4cc3d9;
+  --ork-ansi-white: #c9ced6;
+  --ork-ansi-bright-black: #7a808a;
+  --ork-ansi-bright-red: #ff8a80;
+  --ork-ansi-bright-green: #7fdb9a;
+  --ork-ansi-bright-yellow: #f5c96b;
+  --ork-ansi-bright-blue: #8db6ff;
+  --ork-ansi-bright-magenta: #d5a8f5;
+  --ork-ansi-bright-cyan: #78d9ea;
+  --ork-ansi-bright-white: #f2f4f6;
+
+  /* Tipografia (§3.4) */
+  --ork-font-ui: "IBM Plex Sans", system-ui, sans-serif;
+  --ork-font-ui-family: "IBM Plex Sans";
+  --ork-font-mono: "JetBrains Mono", ui-monospace, "DejaVu Sans Mono", monospace;
+  --ork-font-mono-family: "JetBrains Mono";
+
+  --ork-fs-title: 18px;
+  --ork-fs-heading: 14px;
+  --ork-fs-body: 13px;
+  --ork-fs-label: 13px;
+  --ork-fs-meta: 11px;
+  --ork-fs-caption: 12px;
+  --ork-fs-terminal: 13px;
+  --ork-lh-terminal: 1.25;
+
+  /* Espaçamento (§3.5, base 4px) */
+  --ork-space-0: 0;
+  --ork-space-2: 2px;
+  --ork-space-4: 4px;
+  --ork-space-6: 6px;
+  --ork-space-8: 8px;
+  --ork-space-12: 12px;
+  --ork-space-16: 16px;
+  --ork-space-20: 20px;
+  --ork-space-24: 24px;
+  --ork-space-32: 32px;
+  --ork-space-40: 40px;
+
+  /* Raios (§3.5) */
+  --ork-r-sm: 2px;
+  --ork-r-md: 4px;
+  --ork-r-lg: 6px;
+  --ork-r-xl: 8px;
+
+  /* Sombras (apenas overlays) */
+  --ork-shadow-pop: 0 8px 24px rgba(0, 0, 0, 0.45), 0 0 0 1px var(--ork-border);
+  --ork-shadow-modal: 0 24px 64px rgba(0, 0, 0, 0.6), 0 0 0 1px var(--ork-border);
+  --ork-scrim: rgba(5, 6, 8, 0.6);
+
+  /* Movimento (§3.5) */
+  --ork-dur-fast: 120ms;
+  --ork-dur-base: 180ms;
+  --ork-dur-loop: 1600ms;
+  --ork-ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+/* ============================================================================
+   Mapeamento Tailwind v4 (`@theme inline` referencia os tokens, sem duplicar).
+   ============================================================================ */
+@theme inline {
+  --color-canvas: var(--ork-bg-canvas);
+  --color-chrome: var(--ork-bg-chrome);
+  --color-surface: var(--ork-bg-surface);
+  --color-raised: var(--ork-bg-raised);
+  --color-hover: var(--ork-bg-hover);
+  --color-terminal: var(--ork-bg-terminal);
+  --color-border-subtle: var(--ork-border-subtle);
+  --color-border: var(--ork-border);
+  --color-border-control: var(--ork-border-control);
+  --color-primary: var(--ork-text-primary);
+  --color-secondary: var(--ork-text-secondary);
+  --color-tertiary: var(--ork-text-tertiary);
+  --color-disabled: var(--ork-text-disabled);
+  --color-on-accent: var(--ork-text-on-accent);
+  --color-accent: var(--ork-accent);
+  --color-accent-hover: var(--ork-accent-hover);
+  --color-success: var(--ork-success);
+  --color-attention: var(--ork-attention);
+  --color-error: var(--ork-error);
+  --color-neutral: var(--ork-neutral);
+  --font-ui: var(--ork-font-ui);
+  --font-mono: var(--ork-font-mono);
+}
+
+/* ============================================================================
+   Base
+   ============================================================================ */
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  font-family: var(--ork-font-ui);
+  font-size: var(--ork-fs-body);
+  line-height: 20px;
+  color: var(--ork-text-primary);
+  background: var(--ork-bg-canvas);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-variant-numeric: tabular-nums;
+  overflow: hidden;
+}
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+}
+
+:focus-visible {
+  outline: 2px solid var(--ork-accent);
+  outline-offset: 2px;
+}
+
+/* ============================================================================
+   Layout geral (§3.6)
+   ============================================================================ */
+.ork-app {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  height: 100dvh;
+  background: var(--ork-bg-canvas);
+}
+
+/* ============================================================================
+   Barra de abas (44px, §4.1)
+   ============================================================================ */
+.ork-tabbar {
+  flex: none;
+  display: flex;
+  align-items: stretch;
+  height: 44px;
+  background: var(--ork-bg-chrome);
+  border-bottom: 1px solid var(--ork-border-subtle);
+}
+
+.ork-tabs {
+  display: flex;
+  align-items: stretch;
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+}
+.ork-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.ork-tab {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  flex: 0 1 200px;
+  min-width: 168px;
+  max-width: 240px;
+  padding: 0 8px 0 12px;
+  border-right: 1px solid var(--ork-border-subtle);
+  color: var(--ork-text-secondary);
+  cursor: pointer;
+  user-select: none;
+  transition: background-color var(--ork-dur-fast) var(--ork-ease-out);
+}
+.ork-tab:hover {
+  background: var(--ork-bg-hover);
+  color: var(--ork-text-primary);
+}
+.ork-tab:active {
+  background: var(--ork-bg-raised);
+}
+.ork-tab.is-active {
+  background: var(--ork-bg-terminal);
+  color: var(--ork-text-primary);
+}
+.ork-tab.is-active::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--ork-accent);
+}
+
+.ork-tab-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.ork-tile {
+  flex: none;
+  width: 24px;
+  height: 24px;
+  border-radius: var(--ork-r-lg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ork-tab-name {
+  font-size: var(--ork-fs-label);
+  font-weight: 500;
+  line-height: 16px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ork-maestro-mark {
+  flex: none;
+  font-size: 8px;
+  line-height: 1;
+  color: var(--ork-text-secondary);
+}
+
+.ork-unseen {
+  flex: none;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--ork-accent);
+}
+
+.ork-tab-status {
+  flex: none;
+  display: flex;
+  align-items: center;
+  margin-left: auto;
+}
+
+.ork-tab-close {
+  flex: none;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: var(--ork-r-sm);
+  background: transparent;
+  color: var(--ork-text-tertiary);
+  opacity: 0;
+}
+.ork-tab:hover .ork-tab-close,
+.ork-tab.is-active .ork-tab-close,
+.ork-tab-close:focus-visible {
+  opacity: 1;
+}
+.ork-tab-close:hover {
+  background: var(--ork-bg-hover);
+  color: var(--ork-text-primary);
+}
+
+.ork-tab-meta {
+  font-family: var(--ork-font-mono);
+  font-size: var(--ork-fs-meta);
+  line-height: 14px;
+  letter-spacing: 0.02em;
+  color: var(--ork-text-tertiary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-top: 1px;
+}
+
+.ork-tab-trillho {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 2px;
+  overflow: hidden;
+  background: transparent;
+}
+.ork-tab-trillho.is-static {
+  background: var(--trillho, var(--ork-neutral));
+}
+.ork-tab-trillho.is-running::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 24px;
+  background: var(--trillho, var(--ork-accent));
+  transform: translateX(-24px);
+  animation: ork-trilho var(--ork-dur-loop) linear infinite;
+}
+@keyframes ork-trilho {
+  to {
+    transform: translateX(280px);
+  }
+}
+
+/* Botão "+" (32px, fixo à direita, §4.2) */
+.ork-add {
+  flex: none;
+  width: 32px;
+  height: 32px;
+  margin: 6px 8px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: var(--ork-r-md);
+  background: transparent;
+  color: var(--ork-text-secondary);
+}
+.ork-add:hover {
+  background: var(--ork-bg-hover);
+  color: var(--ork-text-primary);
+}
+.ork-add:active {
+  background: var(--ork-bg-raised);
+}
+
+/* ============================================================================
+   Palco do terminal (§4.4)
+   ============================================================================ */
+.ork-stage {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  background: var(--ork-bg-terminal);
+}
+
+.ork-term-panel {
+  position: absolute;
+  inset: 0;
+  padding: 8px 12px;
+}
+.ork-term-panel.is-focused::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: var(--ork-accent);
+}
+
+.ork-term {
+  width: 100%;
+  height: 100%;
+}
+
+/* Barra de rolagem do xterm (10px, trilha transparente, §4.4) */
+.ork-term .xterm-viewport {
+  scrollbar-width: thin;
+  scrollbar-color: var(--ork-border-control-dim) transparent;
+}
+.ork-term .xterm-viewport::-webkit-scrollbar {
+  width: 10px;
+}
+.ork-term .xterm-viewport::-webkit-scrollbar-track {
+  background: transparent;
+}
+.ork-term .xterm-viewport::-webkit-scrollbar-thumb {
+  background: var(--ork-border-control-dim);
+  border-radius: 5px;
+}
+.ork-term .xterm-viewport::-webkit-scrollbar-thumb:hover {
+  background: var(--ork-border-control);
+}
+
+/* ============================================================================
+   Estado vazio (§4.2)
+   ============================================================================ */
+.ork-empty {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 24px;
+  text-align: center;
+}
+.ork-empty h1 {
+  margin: 0;
+  font-size: var(--ork-fs-title);
+  font-weight: 600;
+  line-height: 24px;
+  color: var(--ork-text-primary);
+}
+.ork-empty p {
+  margin: 0;
+  font-size: var(--ork-fs-body);
+  color: var(--ork-text-secondary);
+}
+
+/* ============================================================================
+   Barra de contexto (24px, §4.4)
+   ============================================================================ */
+.ork-contextbar {
+  flex: none;
+  display: flex;
+  align-items: center;
+  height: 24px;
+  padding: 0 12px;
+  gap: 16px;
+  background: var(--ork-bg-chrome);
+  border-top: 1px solid var(--ork-border-subtle);
+  font-family: var(--ork-font-mono);
+  font-size: var(--ork-fs-meta);
+  line-height: 14px;
+  letter-spacing: 0.02em;
+  color: var(--ork-text-tertiary);
+}
+.ork-contextbar > span {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ork-ctx-spacer {
+  flex: 1 1 auto;
+}
+
+/* ============================================================================
+   Botões (§4.3)
+   ============================================================================ */
+.ork-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 14px;
+  border-radius: var(--ork-r-md);
+  border: 1px solid transparent;
+  font-size: var(--ork-fs-label);
+  font-weight: 500;
+  line-height: 16px;
+  transition: background-color var(--ork-dur-fast) var(--ork-ease-out),
+    color var(--ork-dur-fast) var(--ork-ease-out),
+    border-color var(--ork-dur-fast) var(--ork-ease-out);
+}
+.ork-btn-primary {
+  background: var(--ork-accent);
+  color: var(--ork-text-on-accent);
+}
+.ork-btn-primary:hover:not(:disabled) {
+  background: var(--ork-accent-hover);
+}
+.ork-btn-primary:active:not(:disabled) {
+  filter: brightness(0.92);
+}
+.ork-btn-primary:disabled {
+  background: var(--ork-bg-raised);
+  color: var(--ork-text-disabled);
+  cursor: not-allowed;
+}
+.ork-btn-secondary {
+  background: transparent;
+  color: var(--ork-text-primary);
+  border-color: var(--ork-border-control);
+}
+.ork-btn-secondary:hover:not(:disabled) {
+  background: var(--ork-bg-hover);
+}
+.ork-btn-secondary:disabled {
+  color: var(--ork-text-disabled);
+  border-color: var(--ork-border-subtle);
+  cursor: not-allowed;
+}
+
+/* ============================================================================
+   Modal de criação (§4.3)
+   ============================================================================ */
+.ork-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--ork-scrim);
+}
+
+.ork-modal {
+  display: flex;
+  flex-direction: column;
+  width: 560px;
+  max-width: 92vw;
+  max-height: 80vh;
+  background: var(--ork-bg-surface);
+  border-radius: var(--ork-r-xl);
+  box-shadow: var(--ork-shadow-modal);
+  overflow: hidden;
+}
+
+.ork-modal-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 24px 24px 0;
+}
+.ork-modal-title {
+  margin: 0;
+  font-size: var(--ork-fs-title);
+  font-weight: 600;
+  line-height: 24px;
+  color: var(--ork-text-primary);
+}
+.ork-modal-subtitle {
+  margin: 4px 0 0;
+  font-size: var(--ork-fs-body);
+  color: var(--ork-text-secondary);
+}
+.ork-modal-close {
+  flex: none;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: var(--ork-r-md);
+  background: transparent;
+  color: var(--ork-text-tertiary);
+}
+.ork-modal-close:hover {
+  background: var(--ork-bg-hover);
+  color: var(--ork-text-primary);
+}
+
+.ork-modal-body {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  padding: 16px 24px 24px;
+}
+.ork-modal-footer {
+  flex: none;
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 16px 24px;
+  border-top: 1px solid var(--ork-border-subtle);
+}
+
+.ork-section-title {
+  margin: 16px 0 12px;
+  font-size: var(--ork-fs-heading);
+  font-weight: 600;
+  line-height: 20px;
+  color: var(--ork-text-primary);
+}
+.ork-section-title:first-child {
+  margin-top: 0;
+}
+
+.ork-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 16px;
+}
+.ork-field-label {
+  font-size: var(--ork-fs-label);
+  font-weight: 500;
+  line-height: 16px;
+  color: var(--ork-text-primary);
+}
+
+.ork-input {
+  height: 32px;
+  padding: 0 10px;
+  background: var(--ork-bg-raised);
+  border: 1px solid var(--ork-border-control);
+  border-radius: var(--ork-r-md);
+  color: var(--ork-text-primary);
+  font-size: var(--ork-fs-body);
+  font-family: inherit;
+}
+.ork-input:focus {
+  border-color: var(--ork-accent);
+  outline: none;
+}
+.ork-input:disabled {
+  color: var(--ork-text-disabled);
+  cursor: not-allowed;
+}
+.ork-input.is-error {
+  border-color: var(--ork-error);
+}
+.ork-input-mono {
+  font-family: var(--ork-font-mono);
+}
+
+.ork-select {
+  appearance: none;
+  padding-right: 28px;
+  background-image: linear-gradient(45deg, transparent 50%, var(--ork-text-tertiary) 50%),
+    linear-gradient(135deg, var(--ork-text-tertiary) 50%, transparent 50%);
+  background-position: calc(100% - 15px) 13px, calc(100% - 10px) 13px;
+  background-size: 5px 5px, 5px 5px;
+  background-repeat: no-repeat;
+}
+
+.ork-workspace-row {
+  display: flex;
+  gap: 8px;
+}
+.ork-workspace-row .ork-input {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.ork-error-text {
+  font-size: var(--ork-fs-caption);
+  line-height: 16px;
+  color: var(--ork-error);
+}
+.ork-help {
+  font-size: var(--ork-fs-caption);
+  line-height: 16px;
+  color: var(--ork-text-tertiary);
+}
+
+.ork-banner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  margin-bottom: 12px;
+  border-radius: var(--ork-r-md);
+  background: var(--ork-error-subtle);
+  color: var(--ork-text-primary);
+  font-size: var(--ork-fs-body);
+}
+.ork-banner-retry {
+  flex: none;
+  height: 24px;
+  padding: 0 10px;
+  border: 1px solid var(--ork-error);
+  border-radius: var(--ork-r-md);
+  background: transparent;
+  color: var(--ork-error);
+  font-size: var(--ork-fs-caption);
+  font-weight: 500;
+}
+.ork-banner-retry:hover {
+  background: var(--ork-bg-hover);
+}
+
+/* Cartões de CLI (2×2, §4.3) */
+.ork-cli-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.ork-cli-card {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 40px;
+  padding: 0 12px;
+  border: 1.5px solid var(--ork-border-control);
+  border-radius: var(--ork-r-md);
+  background: var(--ork-bg-raised);
+  color: var(--ork-text-secondary);
+  font-size: var(--ork-fs-body);
+  cursor: pointer;
+}
+.ork-cli-card:hover {
+  background: var(--ork-bg-hover);
+}
+.ork-cli-card.is-selected {
+  border-color: var(--ork-accent);
+  background: var(--ork-accent-subtle);
+  color: var(--ork-text-primary);
+}
+
+/* Grade de glifos (16, 8 por linha, §4.3) */
+.ork-icon-grid {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 6px;
+}
+.ork-icon-cell {
+  aspect-ratio: 1;
+  width: 100%;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1.5px solid transparent;
+  border-radius: var(--ork-r-md);
+  background: var(--ork-bg-raised);
+  color: var(--ork-text-tertiary);
+  cursor: pointer;
+}
+.ork-icon-cell:hover {
+  background: var(--ork-bg-hover);
+}
+.ork-icon-cell.is-selected {
+  border-color: var(--ork-accent);
+  background: var(--ork-accent-subtle);
+  color: var(--ork-text-primary);
+}
+
+.ork-color-row {
+  display: flex;
+  gap: 6px;
+  margin-top: 8px;
+}
+.ork-color-swatch {
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  border-radius: 50%;
+  border: 1.5px solid transparent;
+  cursor: pointer;
+}
+.ork-color-swatch.is-selected {
+  border-color: var(--ork-accent);
+  box-shadow: 0 0 0 1px var(--ork-accent);
+}
+
+/* Controle segmentado (Maestro / Especialista, §4.3) */
+.ork-segmented {
+  display: inline-flex;
+  align-self: flex-start;
+  border: 1px solid var(--ork-border-control);
+  border-radius: var(--ork-r-md);
+  overflow: hidden;
+}
+.ork-segmented button {
+  height: 32px;
+  padding: 0 16px;
+  border: none;
+  background: transparent;
+  color: var(--ork-text-secondary);
+  font-size: var(--ork-fs-label);
+  font-weight: 500;
+}
+.ork-segmented button:hover:not(.is-selected) {
+  background: var(--ork-bg-hover);
+}
+.ork-segmented button.is-selected {
+  background: var(--ork-accent-subtle);
+  color: var(--ork-text-primary);
+}
+
+/* Prévia de role (3 linhas, mono, readonly, §4.3) */
+.ork-role-preview {
+  font-family: var(--ork-font-mono);
+  font-size: var(--ork-fs-caption);
+  line-height: 16px;
+  color: var(--ork-text-secondary);
+  background: var(--ork-bg-raised);
+  border-radius: var(--ork-r-md);
+  padding: 8px 10px;
+  white-space: pre-wrap;
+}
+
+/* ============================================================================
+   Estado running: giro do arco (900ms linear, §4.5)
+   ============================================================================ */
+.ork-status-running {
+  transform-origin: 50% 50%;
+  animation: ork-spin 900ms linear infinite;
+}
+@keyframes ork-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ============================================================================
+   Movimento reduzido (§3.5 / V-10)
+   ============================================================================ */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --ork-dur-fast: 0ms;
+    --ork-dur-base: 0ms;
+    --ork-dur-loop: 0ms;
+  }
+  .ork-tab-trillho.is-running::after {
+    animation: none;
+    transform: translateX(40%);
+  }
+  .ork-status-running {
+    animation: none;
+    transform: rotate(-45deg);
+  }
+}

@@ -1,50 +1,169 @@
-import { useState } from "react";
-import reactLogo from "./assets/react.svg";
-import { invoke } from "@tauri-apps/api/core";
-import "./App.css";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { listen, type UnlistenFn } from "@tauri-apps/api/event";
+import type { AgentDefinition, Tab } from "./types";
+import { createSession, closeSession } from "./lib/tauri";
+import { TabBar } from "./components/TabBar";
+import { TerminalPanel } from "./components/TerminalPanel";
+import { CreateAgentModal } from "./components/CreateAgentModal";
+import { EmptyState } from "./components/EmptyState";
+import { ContextBar } from "./components/ContextBar";
 
 function App() {
-  const [greetMsg, setGreetMsg] = useState("");
-  const [name, setName] = useState("");
+  const [tabs, setTabs] = useState<Tab[]>([]);
+  const [activeId, setActiveId] = useState<string | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [sizes, setSizes] = useState<Record<string, { cols: number; rows: number }>>({});
 
-  async function greet() {
-    // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
-    setGreetMsg(await invoke("greet", { name }));
-  }
+  const activeIdRef = useRef(activeId);
+  activeIdRef.current = activeId;
+  const tabsRef = useRef(tabs);
+  tabsRef.current = tabs;
+
+  // Evento de saída da sessão → atualiza o estado da aba correspondente.
+  useEffect(() => {
+    let un: UnlistenFn | undefined;
+    void listen<{ session_id: string; code: number }>("session-exit", (e) => {
+      const { session_id, code } = e.payload;
+      setTabs((prev) =>
+        prev.map((t) =>
+          t.sessionId === session_id
+            ? {
+                ...t,
+                status: code === 0 ? "done" : "failed",
+                exitCode: code,
+                unseen: t.sessionId !== activeIdRef.current,
+              }
+            : t,
+        ),
+      );
+    }).then((fn) => {
+      un = fn;
+    });
+    return () => {
+      un?.();
+    };
+  }, []);
+
+  const activateTab = useCallback((id: string) => {
+    setActiveId(id);
+    setTabs((prev) =>
+      prev.map((t) => (t.sessionId === id ? { ...t, unseen: false } : t)),
+    );
+  }, []);
+
+  const createAgent = useCallback(async (def: AgentDefinition): Promise<void> => {
+    const info = await createSession(def.name);
+    const tab: Tab = {
+      sessionId: info.id,
+      title: info.title,
+      agent: def,
+      status: "idle",
+      exitCode: null,
+      unseen: false,
+    };
+    setTabs((prev) => [...prev, tab]);
+    setActiveId(info.id);
+  }, []);
+
+  const closeTab = useCallback(
+    async (id: string) => {
+      void closeSession(id).catch(() => {});
+      const list = tabsRef.current;
+      const idx = list.findIndex((t) => t.sessionId === id);
+      const remaining = list.filter((t) => t.sessionId !== id);
+      setTabs(remaining);
+      setSizes((prev) => {
+        const next = { ...prev };
+        delete next[id];
+        return next;
+      });
+      if (activeIdRef.current === id) {
+        const neighbor = remaining[Math.min(idx, remaining.length - 1)];
+        setActiveId(neighbor ? neighbor.sessionId : null);
+      }
+    },
+    [],
+  );
+
+  const onSize = useCallback((sessionId: string, cols: number, rows: number) => {
+    setSizes((prev) => ({ ...prev, [sessionId]: { cols, rows } }));
+  }, []);
+
+  const cycle = useCallback(
+    (dir: 1 | -1) => {
+      const list = tabsRef.current;
+      if (list.length === 0) return;
+      const idx = list.findIndex((t) => t.sessionId === activeIdRef.current);
+      const next = list[(idx + dir + list.length) % list.length];
+      activateTab(next.sessionId);
+    },
+    [activateTab],
+  );
+
+  // Atalhos: Ctrl+Shift+N abre o modal; Ctrl+Tab / Ctrl+Shift+Tab ciclam.
+  // Quando o foco está no terminal, apenas atalhos com Ctrl+Shift ou Alt são
+  // capturados pelo app (§4.1).
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement | null;
+      const inTerminal = !!target?.closest?.(".ork-term");
+      const ctrlShift = e.ctrlKey && e.shiftKey;
+
+      if (inTerminal && !e.altKey && !ctrlShift) return;
+
+      if (ctrlShift && e.code === "KeyN") {
+        e.preventDefault();
+        setModalOpen(true);
+      } else if (e.ctrlKey && e.code === "Tab") {
+        e.preventDefault();
+        cycle(e.shiftKey ? -1 : 1);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [cycle]);
+
+  const activeTab = tabs.find((t) => t.sessionId === activeId) ?? null;
+  const activeSize = activeId ? sizes[activeId] : undefined;
 
   return (
-    <main className="container">
-      <h1>Welcome to Tauri + React</h1>
+    <div className="ork-app">
+      <TabBar
+        tabs={tabs}
+        activeId={activeId}
+        onSelect={activateTab}
+        onClose={closeTab}
+        onAdd={() => setModalOpen(true)}
+      />
 
-      <div className="row">
-        <a href="https://vite.dev" target="_blank">
-          <img src="/vite.svg" className="logo vite" alt="Vite logo" />
-        </a>
-        <a href="https://tauri.app" target="_blank">
-          <img src="/tauri.svg" className="logo tauri" alt="Tauri logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
+      <div className="ork-stage" id="ork-terminal">
+        {tabs.length === 0 && <EmptyState onAdd={() => setModalOpen(true)} />}
+        {tabs.map((tab) => (
+          <TerminalPanel
+            key={tab.sessionId}
+            tab={tab}
+            active={tab.sessionId === activeId}
+            onSize={onSize}
+          />
+        ))}
       </div>
-      <p>Click on the Tauri, Vite, and React logos to learn more.</p>
 
-      <form
-        className="row"
-        onSubmit={(e) => {
-          e.preventDefault();
-          greet();
-        }}
-      >
-        <input
-          id="greet-input"
-          onChange={(e) => setName(e.currentTarget.value)}
-          placeholder="Enter a name..."
+      {tabs.length > 0 && (
+        <ContextBar
+          tab={activeTab}
+          cols={activeSize?.cols ?? 0}
+          rows={activeSize?.rows ?? 0}
         />
-        <button type="submit">Greet</button>
-      </form>
-      <p>{greetMsg}</p>
-    </main>
+      )}
+
+      {modalOpen && (
+        <CreateAgentModal
+          existingNames={tabs.map((t) => t.agent.name)}
+          onCreate={createAgent}
+          onClose={() => setModalOpen(false)}
+        />
+      )}
+    </div>
   );
 }
 

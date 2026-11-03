@@ -1,12 +1,22 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 import type { AgentDefinition, Tab } from "./types";
-import { createSession, closeSession, writeInput, detectClis, type CliAvail } from "./lib/tauri";
+import type { Message } from "./lib/tauri";
+import {
+  createSession,
+  closeSession,
+  writeInput,
+  detectClis,
+  reconnectSession,
+  lastInputAt,
+  type CliAvail,
+} from "./lib/tauri";
 import { TabBar } from "./components/TabBar";
 import { TerminalPanel } from "./components/TerminalPanel";
 import { CreateAgentModal } from "./components/CreateAgentModal";
 import { EmptyState } from "./components/EmptyState";
 import { ContextBar } from "./components/ContextBar";
+import { StateBanner } from "./components/StateBanner";
 
 const TERM_FONT_MIN = 10;
 const TERM_FONT_MAX = 20;
@@ -41,6 +51,20 @@ export function launchCommand(workspace: string, cli: string): string {
 // Tempo para o tmux anexar e o shell do pane ficar pronto antes de digitar o CLI.
 const LAUNCH_DELAY_MS = 600;
 
+// running = saída real do PTY nos últimos RUNNING_IDLE_MS (proxy de atividade; o
+// backend não expõe "executando"). Saída até ECHO_MS depois de uma digitação é eco.
+const RUNNING_IDLE_MS = 2500;
+const ECHO_MS = 300;
+
+const blankTab = {
+  exitCode: null,
+  unseen: false,
+  exitSignal: null,
+  disconnected: false,
+  blocker: null,
+  notice: null,
+} as const;
+
 function App() {
   const [tabs, setTabs] = useState<Tab[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
@@ -66,19 +90,108 @@ function App() {
   // Evento de saída da sessão → atualiza o estado da aba correspondente.
   useEffect(() => {
     let un: UnlistenFn | undefined;
-    void listen<{ session_id: string; code: number }>("session-exit", (e) => {
-      const { session_id, code } = e.payload;
+    void listen<{ session_id: string; code: number; signal?: string | null; recoverable?: boolean }>(
+      "session-exit",
+      (e) => {
+      const { session_id, code, signal, recoverable } = e.payload;
       setTabs((prev) =>
         prev.map((t) =>
           t.sessionId === session_id
             ? {
                 ...t,
-                status: code === 0 ? "done" : "failed",
+                // F4: o tmux sobreviveu ao cliente => desconectada (recuperável),
+                // glifo de bloqueado. Senão: código 0 => done; ≠0/sinal => failed.
+                status: recoverable ? "blocked" : code === 0 && !signal ? "done" : "failed",
+                disconnected: !!recoverable,
                 exitCode: code,
+                exitSignal: signal ?? null,
+                blocker: null,
+                notice: null,
                 unseen: t.sessionId !== activeIdRef.current,
               }
             : t,
         ),
+      );
+    }).then((fn) => {
+      un = fn;
+    });
+    return () => {
+      un?.();
+    };
+  }, []);
+
+  // R1/R2: saída do PTY => running (aba inativa também ganha o ponto "nova saída").
+  const activityRef = useRef<Record<string, number>>({});
+  useEffect(() => {
+    let un: UnlistenFn | undefined;
+    void listen<{ session_id: string }>("session-output", (e) => {
+      const id = e.payload.session_id;
+      const now = Date.now();
+      if (now - (lastInputAt[id] ?? 0) < ECHO_MS) return; // eco da digitação
+      activityRef.current[id] = now;
+      const t = tabsRef.current.find((x) => x.sessionId === id);
+      if (!t || t.disconnected || t.status === "failed" || t.status === "done") return;
+      const inactive = id !== activeIdRef.current;
+      const needRunning = t.status === "idle";
+      const needUnseen = inactive && !t.unseen;
+      if (!needRunning && !needUnseen) return;
+      setTabs((prev) =>
+        prev.map((x) =>
+          x.sessionId === id
+            ? { ...x, status: needRunning ? "running" : x.status, unseen: x.unseen || inactive }
+            : x,
+        ),
+      );
+    }).then((fn) => {
+      un = fn;
+    });
+    const timer = window.setInterval(() => {
+      const now = Date.now();
+      const stale = tabsRef.current.some(
+        (t) => t.status === "running" && now - (activityRef.current[t.sessionId] ?? 0) > RUNNING_IDLE_MS,
+      );
+      if (!stale) return;
+      setTabs((prev) =>
+        prev.map((t) =>
+          t.status === "running" && now - (activityRef.current[t.sessionId] ?? 0) > RUNNING_IDLE_MS
+            ? { ...t, status: "idle" }
+            : t,
+        ),
+      );
+    }, 1000);
+    return () => {
+      un?.();
+      window.clearInterval(timer);
+    };
+  }, []);
+
+  // B1/B2: mensagem `question` do broker => blocked; qualquer outra mensagem da
+  // mesma task (resposta/progresso/resultado/falha) libera.
+  useEffect(() => {
+    let un: UnlistenFn | undefined;
+    void listen<Message>("message-received", (e) => {
+      const m = e.payload;
+      setTabs((prev) =>
+        prev.map((t) => {
+          if (m.kind === "question") {
+            if (t.agent.name !== m.from || t.disconnected || t.status === "failed" || t.status === "done") return t;
+            return {
+              ...t,
+              status: "blocked",
+              unseen: t.sessionId !== activeIdRef.current || t.unseen,
+              blocker: {
+                kind: m.to === "orkest-ui" ? "user" : "agent",
+                agent: m.to === "orkest-ui" ? null : m.to,
+                taskId: m.task_id,
+                questionId: m.id,
+              },
+            };
+          }
+          if (t.status === "blocked" && t.blocker?.taskId === m.task_id && t.blocker.questionId !== m.id) {
+            return { ...t, status: "idle", blocker: null };
+          }
+          return t;
+        }),
       );
     }).then((fn) => {
       un = fn;
@@ -95,26 +208,73 @@ function App() {
     );
   }, []);
 
-  const createAgent = useCallback(async (def: AgentDefinition): Promise<void> => {
+  /** Abre a sessão e digita o CLI do agente (write_input pós-attach). */
+  const startSession = useCallback(async (def: AgentDefinition) => {
     const info = await createSession(def.name);
-    const tab: Tab = {
-      sessionId: info.id,
-      title: info.title,
-      agent: def,
-      status: "idle",
-      exitCode: null,
-      unseen: false,
-    };
-    setTabs((prev) => [...prev, tab]);
-    setActiveId(info.id);
-    // Abre o CLI do agente no terminal recém-criado (write_input pós-attach;
-    // o attach do tmux segue idempotente). Só se instalado, quando a detecção respondeu.
     const avail = clisRef.current?.find((c) => c.key === def.cli);
     if (!clisRef.current || avail?.installed) {
       window.setTimeout(() => {
         void writeInput(info.id, launchCommand(def.workspace, def.cli)).catch(() => {});
       }, LAUNCH_DELAY_MS);
     }
+    return info;
+  }, []);
+
+  const createAgent = useCallback(
+    async (def: AgentDefinition): Promise<void> => {
+      const info = await startSession(def);
+      const tab: Tab = { sessionId: info.id, title: info.title, agent: def, status: "idle", ...blankTab };
+      setTabs((prev) => [...prev, tab]);
+      setActiveId(info.id);
+    },
+    [startSession],
+  );
+
+  // F1/F2 "Reiniciar": ação explícita do usuário — nova sessão no mesmo lugar da aba.
+  const restartTab = useCallback(
+    async (id: string) => {
+      const old = tabsRef.current.find((t) => t.sessionId === id);
+      if (!old) return;
+      try {
+        const info = await startSession(old.agent);
+        void closeSession(id).catch(() => {});
+        setTabs((prev) =>
+          prev.map((t) =>
+            t.sessionId === id
+              ? { ...t, sessionId: info.id, title: info.title, status: "idle", ...blankTab }
+              : t,
+          ),
+        );
+        setActiveId((cur) => (cur === id ? info.id : cur));
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        setTabs((prev) => prev.map((t) => (t.sessionId === id ? { ...t, notice: `reinício falhou: ${msg}` } : t)));
+      }
+    },
+    [startSession],
+  );
+
+  // F4 "Reconectar": re-attach explícito; falha vira aviso visível, sem retry silencioso.
+  const reconnectTab = useCallback(async (id: string) => {
+    try {
+      await reconnectSession(id);
+      setTabs((prev) =>
+        prev.map((t) =>
+          t.sessionId === id
+            ? { ...t, status: "idle", disconnected: false, exitCode: null, exitSignal: null, notice: null }
+            : t,
+        ),
+      );
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      setTabs((prev) => prev.map((t) => (t.sessionId === id ? { ...t, notice: msg } : t)));
+    }
+  }, []);
+
+  const focusTerminal = useCallback((id: string) => {
+    document
+      .querySelector<HTMLElement>(`[data-session-id="${id}"] .xterm-helper-textarea`)
+      ?.focus();
   }, []);
 
   const closeTab = useCallback(
@@ -224,6 +384,23 @@ function App() {
           />
         ))}
       </div>
+
+      {activeTab && (
+        <StateBanner
+          tab={activeTab}
+          tabs={tabs}
+          actions={{
+            onPrompt: () => focusTerminal(activeTab.sessionId),
+            onLog: () => focusTerminal(activeTab.sessionId), // o scrollback do terminal é o log
+            onRestart: () => void restartTab(activeTab.sessionId),
+            onReconnect: () => void reconnectTab(activeTab.sessionId),
+            onViewAgent: (name) => {
+              const t = tabs.find((x) => x.agent.name === name);
+              if (t) activateTab(t.sessionId);
+            },
+          }}
+        />
+      )}
 
       {tabs.length > 0 && (
         <ContextBar

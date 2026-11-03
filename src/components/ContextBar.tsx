@@ -1,5 +1,5 @@
 import type { Tab } from "../types";
-import { STATUS_LABELS } from "../types";
+import { tabStatusLabel } from "../types";
 
 interface ContextBarProps {
   tab: Tab | null;
@@ -18,7 +18,7 @@ export function ContextBar({ tab, cols, rows }: ContextBarProps) {
       <span>{tab ? tab.title : "—"}</span>
       <span className="ork-ctx-spacer" />
       <span>
-        {tab ? `${STATUS_LABELS[tab.status]} · ${cols}×${rows}` : "—"}
+        {tab ? `${tabStatusLabel(tab)} · ${tab.disconnected ? "—" : `${cols}×${rows}`}` : "—"}
       </span>
     </div>
   );

@@ -1,5 +1,5 @@
 import type { Tab } from "../types";
-import { STATUS_COLOR, STATUS_LABELS } from "../types";
+import { STATUS_COLOR, tabStatusLabel } from "../types";
 import { AgentGlyph, IDENTITY_COLORS, identityVar, identitySubtleVar, PlusIcon, CloseIcon, StatusGlyph } from "./icons";
 
 interface TabBarProps {
@@ -18,7 +18,7 @@ export function TabBar({ tabs, activeId, onSelect, onClose, onAdd }: TabBarProps
           const active = tab.sessionId === activeId;
           const colorName = IDENTITY_COLORS[tab.agent.identityColor % IDENTITY_COLORS.length];
           const stateColor = STATUS_COLOR[tab.status];
-          const label = `${tab.agent.name} · ${STATUS_LABELS[tab.status]}`;
+          const label = `${tab.agent.name} · ${tabStatusLabel(tab)}`;
           return (
             <div
               key={tab.sessionId}
@@ -29,7 +29,7 @@ export function TabBar({ tabs, activeId, onSelect, onClose, onAdd }: TabBarProps
               aria-label={label}
               tabIndex={active ? 0 : -1}
               className={`ork-tab${active ? " is-active" : ""}`}
-              title={tab.agent.name}
+              title={`${tab.agent.name} · ${tab.agent.cliName} · ${tab.agent.model}`}
               onClick={() => onSelect(tab.sessionId)}
             >
               <div className="ork-tab-row">
@@ -47,7 +47,7 @@ export function TabBar({ tabs, activeId, onSelect, onClose, onAdd }: TabBarProps
                   <span className="ork-maestro-mark" aria-label="Maestro">◆</span>
                 )}
                 {tab.unseen && !active && <span className="ork-unseen" aria-label="nova saída" />}
-                <span className="ork-tab-status" style={{ color: stateColor }}>
+                <span className={`ork-tab-status${tab.status === "blocked" ? " is-pulse" : ""}`} style={{ color: stateColor }}>
                   <StatusGlyph status={tab.status} />
                 </span>
                 <button

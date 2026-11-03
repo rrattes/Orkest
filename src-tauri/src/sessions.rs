@@ -25,6 +25,10 @@ pub struct SessionOutput {
 pub struct SessionExit {
     pub session_id: String,
     pub code: i32,
+    /// Terminating signal name when the PTY client was killed by one (F2).
+    pub signal: Option<String>,
+    /// tmux session still alive after the client exited => can be re-attached (F4).
+    pub recoverable: bool,
 }
 
 #[derive(Clone, Debug)]
@@ -47,6 +51,15 @@ pub struct SessionManager {
     sessions: Mutex<HashMap<String, Session>>,
     /// Optional dedicated tmux socket (`-L`); used by tests to avoid the user's server.
     tmux_socket: Option<String>,
+}
+
+fn tmux_has_session(base: &[String], name: &str) -> bool {
+    std::process::Command::new(&base[0])
+        .args(&base[1..])
+        .args(["has-session", "-t", name])
+        .output()
+        .map(|o| o.status.success())
+        .unwrap_or(false)
 }
 
 fn err<E: std::fmt::Display>(e: E) -> String {
@@ -75,6 +88,35 @@ impl SessionManager {
     pub fn create(&self, agent_id: &str, sink: EventSink) -> Result<SessionInfo, String> {
         let id = uuid::Uuid::new_v4().to_string();
         let tmux_name = format!("orkest-{id}");
+        let session = self.attach(&id, tmux_name, sink)?;
+        self.sessions.lock().map_err(err)?.insert(id.clone(), session);
+        Ok(SessionInfo { id, title: agent_id.to_string() })
+    }
+
+    /// Explicit user action (F4 "Reconectar"): re-attach a NEW PTY client to the
+    /// still-alive tmux session of `id`. Fails (no silent retry) if tmux is gone
+    /// or the previous client is still running.
+    pub fn reconnect(&self, id: &str, sink: EventSink) -> Result<(), String> {
+        let tmux_name = {
+            let map = self.sessions.lock().map_err(err)?;
+            let s = map.get(id).ok_or_else(|| format!("unknown session {id}"))?;
+            if let Ok(mut c) = s.child.lock() {
+                if matches!(c.try_wait(), Ok(None)) {
+                    return Err("sessão ainda conectada".into());
+                }
+            }
+            s.tmux_name.clone()
+        };
+        if !tmux_has_session(&self.tmux_base(), &tmux_name) {
+            return Err("a sessão tmux não existe mais; reinicie o agente".into());
+        }
+        let session = self.attach(id, tmux_name, sink)?;
+        self.sessions.lock().map_err(err)?.insert(id.to_string(), session);
+        Ok(())
+    }
+
+    /// Open a PTY running `tmux new-session -A -s <name>` and pump its output.
+    fn attach(&self, id: &str, tmux_name: String, sink: EventSink) -> Result<Session, String> {
         let pair = native_pty_system()
             .openpty(PtySize { rows: 24, cols: 80, pixel_width: 0, pixel_height: 0 })
             .map_err(err)?;
@@ -95,8 +137,10 @@ impl SessionManager {
         let writer = pair.master.take_writer().map_err(err)?;
         let child = Arc::new(Mutex::new(child));
 
-        let sid = id.clone();
+        let sid = id.to_string();
         let child_for_thread = child.clone();
+        let base = self.tmux_base();
+        let name_for_thread = tmux_name.clone();
         thread::spawn(move || {
             let mut buf = [0u8; 4096];
             let mut pending: Vec<u8> = Vec::new(); // incomplete UTF-8 tail
@@ -119,20 +163,15 @@ impl SessionManager {
                     }
                 }
             }
-            let code = child_for_thread
-                .lock()
-                .ok()
-                .and_then(|mut c| c.wait().ok())
-                .map(|s| s.exit_code() as i32)
-                .unwrap_or(-1);
-            sink(SessionEvent::Exit(SessionExit { session_id: sid, code }));
+            let status = child_for_thread.lock().ok().and_then(|mut c| c.wait().ok());
+            let code = status.as_ref().map(|s| s.exit_code() as i32).unwrap_or(-1);
+            let signal = status.as_ref().and_then(|s| s.signal().map(String::from));
+            // The tmux session outliving its client => disconnected, recoverable (F4).
+            let recoverable = tmux_has_session(&base, &name_for_thread);
+            sink(SessionEvent::Exit(SessionExit { session_id: sid, code, signal, recoverable }));
         });
 
-        self.sessions.lock().map_err(err)?.insert(
-            id.clone(),
-            Session { master: pair.master, writer, child, tmux_name },
-        );
-        Ok(SessionInfo { id, title: agent_id.to_string() })
+        Ok(Session { master: pair.master, writer, child, tmux_name })
     }
 
     pub fn write_input(&self, id: &str, data: &str) -> Result<(), String> {
@@ -205,6 +244,69 @@ mod tests {
         assert!(!acc.contains(&info.id), "tmux status/UUID leaked into terminal: {acc:?}");
         assert!(acc.contains("orkest-42"), "round-trip failed: {acc:?}");
         // cleanup tmux server on the test socket
+        let _ = std::process::Command::new("tmux").args(["-L", &socket, "kill-server"]).output();
+    }
+
+    #[test]
+    fn client_killed_is_recoverable_and_reconnect_roundtrips() {
+        let socket = format!("orkest-test-rc-{}", std::process::id());
+        let mgr = SessionManager::with_tmux_socket(&socket);
+        let (tx, rx) = mpsc::channel();
+        let tx = Mutex::new(tx);
+        let sink: EventSink = Arc::new(move |e| {
+            let _ = tx.lock().unwrap().send(e);
+        });
+        let info = mgr.create("rc", sink.clone()).expect("create");
+        std::thread::sleep(Duration::from_millis(500));
+        // kill ONLY the attached client (tmux session keeps living)
+        mgr.sessions.lock().unwrap().get(&info.id).unwrap().child.lock().unwrap().kill().unwrap();
+        let mut exit = None;
+        let deadline = Instant::now() + Duration::from_secs(5);
+        while Instant::now() < deadline && exit.is_none() {
+            if let Ok(SessionEvent::Exit(x)) = rx.recv_timeout(Duration::from_millis(200)) {
+                exit = Some(x);
+            }
+        }
+        let x = exit.expect("exit event");
+        println!("exit: code={} signal={:?} recoverable={}", x.code, x.signal, x.recoverable);
+        assert!(x.recoverable, "tmux session should outlive killed client");
+        mgr.reconnect(&info.id, sink).expect("reconnect");
+        std::thread::sleep(Duration::from_millis(500));
+        mgr.write_input(&info.id, "echo recon-$((6*7))\n").unwrap();
+        let mut acc = String::new();
+        let deadline = Instant::now() + Duration::from_secs(10);
+        while Instant::now() < deadline && !acc.contains("recon-42") {
+            if let Ok(SessionEvent::Output(o)) = rx.recv_timeout(Duration::from_millis(200)) {
+                acc.push_str(&o.data);
+            }
+        }
+        mgr.close(&info.id).unwrap();
+        let _ = std::process::Command::new("tmux").args(["-L", &socket, "kill-server"]).output();
+        assert!(acc.contains("recon-42"), "reconnect round-trip failed: {acc:?}");
+    }
+
+    #[test]
+    fn closed_session_is_not_recoverable() {
+        let socket = format!("orkest-test-nr-{}", std::process::id());
+        let mgr = SessionManager::with_tmux_socket(&socket);
+        let (tx, rx) = mpsc::channel();
+        let tx = Mutex::new(tx);
+        let sink: EventSink = Arc::new(move |e| {
+            let _ = tx.lock().unwrap().send(e);
+        });
+        let info = mgr.create("nr", sink).expect("create");
+        std::thread::sleep(Duration::from_millis(500));
+        mgr.write_input(&info.id, "exit\n").unwrap(); // shell exits => tmux session ends
+        let mut exit = None;
+        let deadline = Instant::now() + Duration::from_secs(5);
+        while Instant::now() < deadline && exit.is_none() {
+            if let Ok(SessionEvent::Exit(x)) = rx.recv_timeout(Duration::from_millis(200)) {
+                exit = Some(x);
+            }
+        }
+        let x = exit.expect("exit event");
+        assert!(!x.recoverable);
+        assert_eq!(x.code, 0);
         let _ = std::process::Command::new("tmux").args(["-L", &socket, "kill-server"]).output();
     }
 }

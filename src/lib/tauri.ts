@@ -21,7 +21,15 @@ export function detectClis(): Promise<CliAvail[]> {
   return invoke<CliAvail[]>("detect_clis");
 }
 
+/** Instante (ms) da última entrada do usuário por sessão — distingue eco de saída real. */
+export const lastInputAt: Record<string, number> = {};
+
+export function reconnectSession(sessionId: string): Promise<void> {
+  return invoke<void>("reconnect_session", { sessionId });
+}
+
 export function writeInput(sessionId: string, data: string): Promise<void> {
+  lastInputAt[sessionId] = Date.now();
   return invoke<void>("write_input", { sessionId, data });
 }
 
@@ -35,4 +43,16 @@ export function resizePty(
 
 export function closeSession(sessionId: string): Promise<void> {
   return invoke<void>("close_session", { sessionId });
+}
+
+/** Mensagem do broker (espelha src-tauri/src/broker.rs). */
+export interface Message {
+  id: string;
+  task_id: string;
+  from: string;
+  to: string;
+  kind: "delegate" | "ack" | "progress" | "question" | "result" | "failure";
+  payload: unknown;
+  state: "pending" | "delivered" | "read" | "done" | "failed";
+  timestamp: number;
 }

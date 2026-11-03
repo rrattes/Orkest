@@ -126,6 +126,8 @@
   --ork-ctxbar-h: 24px;
   --ork-ctl-h: 36px;
   --ork-btn-h: 32px;
+  --ork-banner-h: 36px; /* §9.9 */
+  --ork-btn-h-sm: 28px; /* §9.9 */
   --ork-ctl-px: 12px;
   --ork-field-gap: 12px;
   --ork-field-gap-tight: 8px;
@@ -271,7 +273,7 @@ button,
   display: flex;
   flex-direction: column;
   justify-content: center;
-  flex: 0 1 200px;
+  flex: 0 1 220px; /* §9.9: 4×220+48=928px */
   min-width: 168px;
   max-width: 240px;
   padding: 0 8px 0 12px;
@@ -1060,5 +1062,97 @@ button,
   .ork-status-running {
     animation: none;
     transform: rotate(-45deg);
+  }
+}
+
+/* ============================================================================
+   Banner de estado (§9.9): 36px, colado à barra de contexto
+   ============================================================================ */
+.ork-banner {
+  flex: none;
+  height: var(--ork-banner-h);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 12px;
+  background: color-mix(in srgb, var(--c) 14%, var(--ork-bg-terminal));
+  border-top: 1px solid color-mix(in srgb, var(--c) 45%, transparent);
+  font-size: var(--ork-fs-body);
+  line-height: 16px;
+}
+.ork-banner-glyph {
+  display: inline-flex;
+}
+.ork-banner-tx {
+  font-weight: 500;
+  color: var(--ork-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+.ork-banner-tx em {
+  font-style: normal;
+  font-weight: 400;
+  color: var(--ork-text-secondary);
+}
+.ork-banner-sp {
+  flex: 1 1 auto;
+}
+.ork-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: var(--ork-r-md);
+  background: var(--ork-bg-raised);
+  font-family: var(--ork-font-mono);
+  font-size: 11px;
+  line-height: 14px;
+  letter-spacing: 0.02em;
+  color: var(--ork-text-secondary);
+  white-space: nowrap;
+}
+.ork-chip-tile {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  border-radius: 2px;
+}
+.ork-banner-btn {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: var(--ork-btn-h-sm);
+  padding: 0 12px;
+  border-radius: var(--ork-r-md);
+  border: 1px solid var(--ork-border-control);
+  background: transparent;
+  color: var(--ork-text-primary);
+  font-size: var(--ork-fs-body);
+  font-weight: 500;
+  line-height: 16px;
+  user-select: none;
+}
+.ork-banner-btn:hover {
+  background: var(--ork-bg-hover);
+}
+
+/* blocked: pulsação única de 360ms ao entrar (§4.5) */
+.ork-tab-status.is-pulse {
+  animation: ork-pulse 360ms var(--ork-ease-out) 1;
+}
+@keyframes ork-pulse {
+  50% {
+    transform: scale(1.35);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ork-tab-status.is-pulse {
+    animation: none;
   }
 }

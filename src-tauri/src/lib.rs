@@ -24,6 +24,21 @@ fn create_session(
 }
 
 #[tauri::command]
+fn reconnect_session(
+    session_id: String,
+    app: AppHandle,
+    state: State<'_, SessionManager>,
+) -> Result<(), String> {
+    let sink: EventSink = Arc::new(move |ev| {
+        let _ = match ev {
+            SessionEvent::Output(o) => app.emit("session-output", o),
+            SessionEvent::Exit(x) => app.emit("session-exit", x),
+        };
+    });
+    state.reconnect(&session_id, sink)
+}
+
+#[tauri::command]
 fn write_input(session_id: String, data: String, state: State<'_, SessionManager>) -> Result<(), String> {
     state.write_input(&session_id, &data)
 }
@@ -104,6 +119,7 @@ pub fn run() {
             write_input,
             resize_pty,
             close_session,
+            reconnect_session,
             send_message,
             list_messages,
             mark_message,

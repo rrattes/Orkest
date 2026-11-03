@@ -213,6 +213,7 @@ export function TerminalPanel({ tab, active, fontSize, onSize }: TerminalPanelPr
   return (
     <div
       role="region"
+      data-session-id={tab.sessionId}
       aria-label={`Terminal de ${tab.agent.name}`}
       className={`ork-term-panel${focused && active ? " is-focused" : ""}`}
       style={{ visibility: active ? "visible" : "hidden" }}

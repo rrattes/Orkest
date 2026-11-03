@@ -2,5 +2,5 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 fn main() {
-    orkest_scaffold_lib::run()
+    orkest_lib::run()
 }

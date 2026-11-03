@@ -3,7 +3,7 @@
 - **Ticket:** ORKEST-002-DESIGN
 - **Autor:** VISUAL-DESIGN-DIRECTOR (consultor independente)
 - **Data:** 2026-11-03
-- **Status:** **PROPOSTA — aguarda aprovação do Maestro/usuário.** Nada aqui é decisão aprovada. Depois da aprovação, a direção escolhida vira a base de implementação.
+- **Status:** **Direção A "Partitura" APROVADA pelo usuário em 2026-11-03.** Base de implementação a partir de agora. As 8 decisões abertas da §7 seguem pendentes e recebem defaults sensatos até decisão do usuário.
 - **Escopo:** app desktop Linux (Arch/Hyprland/Wayland), tema escuro, uma tela principal (barra de abas de agentes + painel de terminal) e um modal de criação de agente.
 - **Fora de escopo:** tema claro, mobile, Floors/Connections/broker (telas futuras), código de app.
 

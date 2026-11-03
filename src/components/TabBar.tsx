@@ -37,7 +37,7 @@ export function TabBar({ tabs, activeId, onSelect, onClose, onAdd, attention, on
         aria-label={label}
         tabIndex={active ? 0 : -1}
         className={`ork-tab${active ? " is-active" : ""}`}
-        title={`${tab.agent.name} · ${tab.agent.cliName} · ${tab.agent.model}`}
+        title={`${tab.agent.name} · ${tab.agent.cliName} · ${tab.agent.model}${tab.agent.modelNote ? `\n⚠ ${tab.agent.modelNote}` : ""}`}
         onClick={() => onSelect(tab.sessionId)}
       >
         <span

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 import type { AgentDefinition, Tab } from "./types";
 import type { Message } from "./lib/tauri";
+import { DEFAULT_MODEL, modelArg, modelGap } from "./lib/agents";
 import {
   createSession,
   closeSession,
@@ -45,13 +46,17 @@ function shq(s: string): string {
 }
 
 /** `cd <workspace> && <cli>` com `~` expandido pelo shell do usuário. */
-export function launchCommand(workspace: string, cli: string): string {
+export function launchCommand(
+  workspace: string,
+  cli: string,
+  model: { flag: string; value: string } | null = null,
+): string {
   const ws = workspace.trim() || "~";
   let cd: string;
   if (ws === "~") cd = "cd ~";
   else if (ws.startsWith("~/")) cd = `cd ~/${shq(ws.slice(2))}`;
   else cd = `cd ${shq(ws)}`;
-  return `${cd} && ${cli}\n`;
+  return `${cd} && ${cli}${model ? ` ${model.flag} ${shq(model.value)}` : ""}\n`;
 }
 
 // Tempo para o tmux anexar e o shell do pane ficar pronto antes de digitar o CLI.
@@ -234,14 +239,25 @@ function App() {
     const avail = clisRef.current?.find((c) => c.key === def.cli);
     if (settingsRef.current.launchCli && (!clisRef.current || avail?.installed)) {
       window.setTimeout(() => {
-        void writeInput(info.id, launchCommand(def.workspace, def.cli)).catch(() => {});
+        void writeInput(
+          info.id,
+          launchCommand(def.workspace, def.cli, modelArg(def.cli, def.model)),
+        ).catch(() => {});
       }, LAUNCH_DELAY_MS);
     }
     return info;
   }, []);
 
   const createAgent = useCallback(
-    async (def: AgentDefinition): Promise<void> => {
+    async (chosen: AgentDefinition): Promise<void> => {
+      // Lacuna honesta: CLI sem flag de modelo na TUI abre com o modelo padrão e avisa.
+      const def: AgentDefinition = modelGap(chosen.cli, chosen.model)
+        ? {
+            ...chosen,
+            model: DEFAULT_MODEL,
+            modelNote: `${chosen.cliName} não tem flag de modelo no modo interativo: abriu com o modelo padrão (escolhido: ${chosen.model}).`,
+          }
+        : chosen;
       const info = await startSession(def);
       const tab: Tab = { sessionId: info.id, title: info.title, agent: def, status: "idle", ...blankTab };
       setTabs((prev) => [...prev, tab]);

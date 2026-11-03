@@ -13,6 +13,7 @@ export interface AgentDefinition {
   identityColor: number; // índice da cor de identidade (0..7)
   type: AgentType;
   role: string; // rótulo da role (vazio = sem role)
+  modelNote?: string; // aviso quando o modelo escolhido não pôde ser aplicado
 }
 
 /** Causa de um bloqueio derivada de uma mensagem `question` pendente no broker. */

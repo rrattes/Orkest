@@ -565,3 +565,14 @@ Princípio: **o layout é definido em px CSS e deve se comportar igual em qualqu
 | V-26 | Nenhum uso de CSS `zoom`, `transform: scale()` ou escala por DPR em JS; nenhuma mudança de env/config global | revisão de código |
 | V-27 | Sem overlay de depuração no build de revisão; estado vazio com ícone "+" e dica `Ctrl+Shift+N` no CTA | captura |
 | V-28 | Altura medida do modal com tudo visível fica dentro de ±8 px do orçamento (720 px); divergência maior é investigada | medição |
+
+### 9.7 Correção de redundância no modal (Role duplicado)
+
+- **Achado (captura real do usuário):** o modal mostra o cabeçalho de seção "Role" e, logo abaixo, o rótulo do campo "Role". A causa é a spec: §4.3 e §9.2 definiam uma seção "Role" contendo um único campo também chamado "Role". Defeito da spec, não da implementação.
+- **Regra:** uma seção só existe se tiver **dois ou mais campos**. Título de seção nunca repete o rótulo do seu único campo.
+- **Estrutura corrigida:** duas seções.
+  1. **Execução:** CLI · Modelo · Workspace.
+  2. **Identidade:** Nome · Ícone · Tipo · **Role** (o campo Role passa a ser o último da seção; sem cabeçalho próprio).
+- **Orçamento de altura:** remove o título da seção Role (16+8) e um gap de seção (16): **−40 px** → total estimado **≈ 680 px** (era 720; estimativa por soma, a confirmar por medição, V-28).
+- **Ordem do controle Tipo:** a spec define "Maestro / Especialista" com **Especialista** como padrão; a captura mostra "Especialista | Maestro". A ordem visual não é crítica; manter **Especialista primeiro** é aceitável porque é o padrão e a opção mais comum — a spec passa a adotar essa ordem.
+- **Aceite V-29:** nenhum rótulo de campo repete o título da sua seção; modal com exatamente duas seções (Execução, Identidade).

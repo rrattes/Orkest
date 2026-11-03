@@ -8,11 +8,27 @@ import { CreateAgentModal } from "./components/CreateAgentModal";
 import { EmptyState } from "./components/EmptyState";
 import { ContextBar } from "./components/ContextBar";
 
+const TERM_FONT_MIN = 10;
+const TERM_FONT_MAX = 20;
+const TERM_FONT_DEFAULT = 13;
+const TERM_FONT_KEY = "orkest.termFontSize";
+
+function loadTermFontSize(): number {
+  try {
+    const v = Number(localStorage.getItem(TERM_FONT_KEY));
+    if (Number.isFinite(v) && v >= TERM_FONT_MIN && v <= TERM_FONT_MAX) return v;
+  } catch {
+    /* localStorage indisponível */
+  }
+  return TERM_FONT_DEFAULT;
+}
+
 function App() {
   const [tabs, setTabs] = useState<Tab[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [sizes, setSizes] = useState<Record<string, { cols: number; rows: number }>>({});
+  const [termFontSize, setTermFontSize] = useState(loadTermFontSize);
 
   const activeIdRef = useRef(activeId);
   activeIdRef.current = activeId;
@@ -100,7 +116,8 @@ function App() {
     [activateTab],
   );
 
-  // Atalhos: Ctrl+Shift+N abre o modal; Ctrl+Tab / Ctrl+Shift+Tab ciclam.
+  // Atalhos: Ctrl+Shift+N abre o modal; Ctrl+Tab / Ctrl+Shift+Tab ciclam;
+  // Ctrl+Shift+= / Ctrl+Shift+- / Ctrl+Shift+0 ajustam a fonte do terminal (§9.4).
   // Quando o foco está no terminal, apenas atalhos com Ctrl+Shift ou Alt são
   // capturados pelo app (§4.1).
   useEffect(() => {
@@ -114,6 +131,13 @@ function App() {
       if (ctrlShift && e.code === "KeyN") {
         e.preventDefault();
         setModalOpen(true);
+      } else if (ctrlShift && (e.code === "Equal" || e.code === "Minus" || e.code === "Digit0")) {
+        e.preventDefault();
+        setTermFontSize((cur) => {
+          if (e.code === "Equal") return Math.min(TERM_FONT_MAX, cur + 1);
+          if (e.code === "Minus") return Math.max(TERM_FONT_MIN, cur - 1);
+          return TERM_FONT_DEFAULT;
+        });
       } else if (e.ctrlKey && e.code === "Tab") {
         e.preventDefault();
         cycle(e.shiftKey ? -1 : 1);
@@ -122,6 +146,15 @@ function App() {
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [cycle]);
+
+  // Persiste a fonte do terminal.
+  useEffect(() => {
+    try {
+      localStorage.setItem(TERM_FONT_KEY, String(termFontSize));
+    } catch {
+      /* ignora */
+    }
+  }, [termFontSize]);
 
   const activeTab = tabs.find((t) => t.sessionId === activeId) ?? null;
   const activeSize = activeId ? sizes[activeId] : undefined;
@@ -143,6 +176,7 @@ function App() {
             key={tab.sessionId}
             tab={tab}
             active={tab.sessionId === activeId}
+            fontSize={termFontSize}
             onSize={onSize}
           />
         ))}

@@ -10,6 +10,7 @@ import type { Tab } from "../types";
 interface TerminalPanelProps {
   tab: Tab;
   active: boolean;
+  fontSize: number;
   onSize: (sessionId: string, cols: number, rows: number) => void;
 }
 
@@ -31,13 +32,15 @@ function pasteInto(term: Terminal) {
   }
 }
 
-export function TerminalPanel({ tab, active, onSize }: TerminalPanelProps) {
+export function TerminalPanel({ tab, active, fontSize, onSize }: TerminalPanelProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const termRef = useRef<Terminal | null>(null);
   const fitRef = useRef<FitAddon | null>(null);
   const [focused, setFocused] = useState(false);
   const onSizeRef = useRef(onSize);
   onSizeRef.current = onSize;
+  const fontSizeRef = useRef(fontSize);
+  fontSizeRef.current = fontSize;
 
   // Cria o xterm e conecta teclado/saída/resize. Reexecuta apenas quando a sessão muda.
   useEffect(() => {
@@ -49,7 +52,7 @@ export function TerminalPanel({ tab, active, onSize }: TerminalPanelProps) {
       cursorStyle: "block",
       cursorInactiveStyle: "outline",
       fontFamily: readToken("--ork-font-mono-family"),
-      fontSize: 13,
+      fontSize: fontSizeRef.current,
       lineHeight: 1.25,
       scrollback: 5000,
       theme: {
@@ -141,7 +144,6 @@ export function TerminalPanel({ tab, active, onSize }: TerminalPanelProps) {
     })();
 
     // fit inicial após o layout (painel pode estar oculto, mas com dimensões reais).
-    // fit inicial após o layout (painel pode estar oculto, mas com dimensões reais).
     const raf = requestAnimationFrame(() => {
       try {
         fit.fit();
@@ -194,6 +196,19 @@ export function TerminalPanel({ tab, active, onSize }: TerminalPanelProps) {
     term.blur();
     return undefined;
   }, [active]);
+
+  // Ajusta o tamanho da fonte do terminal e refaz o fit (§9.4).
+  useEffect(() => {
+    const term = termRef.current;
+    const fit = fitRef.current;
+    if (!term || !fit) return;
+    term.options.fontSize = fontSize;
+    try {
+      fit.fit();
+    } catch {
+      /* ignora */
+    }
+  }, [fontSize]);
 
   return (
     <div

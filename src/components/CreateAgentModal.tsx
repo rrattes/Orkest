@@ -312,8 +312,6 @@ export function CreateAgentModal({ existingNames, onCreate, onClose }: CreateAge
               </div>
             </div>
 
-            <h3 className="ork-section-title">Role</h3>
-
             <div className="ork-field">
               <label className="ork-field-label" htmlFor="ork-role">
                 Role

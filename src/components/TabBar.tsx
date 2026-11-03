@@ -74,15 +74,15 @@ export function TabBar({ tabs, activeId, onSelect, onClose, onAdd }: TabBarProps
             </div>
           );
         })}
+        <button
+          className="ork-add"
+          aria-label="Novo agente"
+          title="Novo agente (Ctrl+Shift+N)"
+          onClick={onAdd}
+        >
+          <PlusIcon />
+        </button>
       </div>
-      <button
-        className="ork-add"
-        aria-label="Novo agente"
-        title="Novo agente (Ctrl+Shift+N)"
-        onClick={onAdd}
-      >
-        <PlusIcon />
-      </button>
     </div>
   );
 }

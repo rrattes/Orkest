@@ -516,9 +516,23 @@ button,
   color: var(--ork-text-secondary);
 }
 .ork-empty-hint {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   font-family: var(--ork-font-mono);
   font-size: var(--ork-fs-caption);
   color: var(--ork-text-tertiary);
+}
+.ork-empty-hint kbd {
+  font-family: var(--ork-font-mono);
+  font-size: var(--ork-fs-meta);
+  line-height: 14px;
+  color: var(--ork-text-tertiary);
+  background: var(--ork-bg-raised);
+  border: 1px solid var(--ork-border-subtle);
+  border-bottom-width: 2px;
+  border-radius: var(--ork-r-sm);
+  padding: 1px 5px;
 }
 
 /* ============================================================================

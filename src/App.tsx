@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 import type { AgentDefinition, Tab } from "./types";
-import { createSession, closeSession } from "./lib/tauri";
+import { createSession, closeSession, writeInput, detectClis, type CliAvail } from "./lib/tauri";
 import { TabBar } from "./components/TabBar";
 import { TerminalPanel } from "./components/TerminalPanel";
 import { CreateAgentModal } from "./components/CreateAgentModal";
@@ -23,15 +23,43 @@ function loadTermFontSize(): number {
   return TERM_FONT_DEFAULT;
 }
 
+/** Aspas simples seguras para o shell do PTY. */
+function shq(s: string): string {
+  return `'${s.replace(/'/g, `'\\''`)}'`;
+}
+
+/** `cd <workspace> && <cli>` com `~` expandido pelo shell do usuário. */
+export function launchCommand(workspace: string, cli: string): string {
+  const ws = workspace.trim() || "~";
+  let cd: string;
+  if (ws === "~") cd = "cd ~";
+  else if (ws.startsWith("~/")) cd = `cd ~/${shq(ws.slice(2))}`;
+  else cd = `cd ${shq(ws)}`;
+  return `${cd} && ${cli}\n`;
+}
+
+// Tempo para o tmux anexar e o shell do pane ficar pronto antes de digitar o CLI.
+const LAUNCH_DELAY_MS = 600;
+
 function App() {
   const [tabs, setTabs] = useState<Tab[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [sizes, setSizes] = useState<Record<string, { cols: number; rows: number }>>({});
   const [termFontSize, setTermFontSize] = useState(loadTermFontSize);
+  // null = detecção pendente/indisponível (modal mostra todos os CLIs).
+  const [clis, setClis] = useState<CliAvail[] | null>(null);
+
+  useEffect(() => {
+    detectClis()
+      .then(setClis)
+      .catch(() => setClis(null));
+  }, []);
 
   const activeIdRef = useRef(activeId);
   activeIdRef.current = activeId;
+  const clisRef = useRef(clis);
+  clisRef.current = clis;
   const tabsRef = useRef(tabs);
   tabsRef.current = tabs;
 
@@ -79,6 +107,14 @@ function App() {
     };
     setTabs((prev) => [...prev, tab]);
     setActiveId(info.id);
+    // Abre o CLI do agente no terminal recém-criado (write_input pós-attach;
+    // o attach do tmux segue idempotente). Só se instalado, quando a detecção respondeu.
+    const avail = clisRef.current?.find((c) => c.key === def.cli);
+    if (!clisRef.current || avail?.installed) {
+      window.setTimeout(() => {
+        void writeInput(info.id, launchCommand(def.workspace, def.cli)).catch(() => {});
+      }, LAUNCH_DELAY_MS);
+    }
   }, []);
 
   const closeTab = useCallback(
@@ -199,6 +235,7 @@ function App() {
 
       {modalOpen && (
         <CreateAgentModal
+          clis={clis}
           existingNames={tabs.map((t) => t.agent.name)}
           onCreate={createAgent}
           onClose={() => setModalOpen(false)}

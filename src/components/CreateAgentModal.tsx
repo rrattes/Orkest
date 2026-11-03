@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { AgentDefinition, AgentType } from "../types";
+import type { CliAvail } from "../lib/tauri";
 import { CLIS, DEFAULT_MODEL, ROLES, modelsFor, buildAgent, newAgentId } from "../lib/agents";
 import {
   AgentGlyph,
@@ -11,6 +12,8 @@ import {
 import { Listbox } from "./Listbox";
 
 interface CreateAgentModalProps {
+  /** CLIs detectados no PATH; null = detecção indisponível (mostra todos). */
+  clis: CliAvail[] | null;
   existingNames: string[];
   onCreate: (def: AgentDefinition) => Promise<void>;
   onClose: () => void;
@@ -21,8 +24,16 @@ const TYPES: { key: AgentType; label: string }[] = [
   { key: "maestro", label: "Maestro" },
 ];
 
-export function CreateAgentModal({ existingNames, onCreate, onClose }: CreateAgentModalProps) {
-  const [cliKey, setCliKey] = useState(() => CLIS[0]?.key ?? "");
+export function CreateAgentModal({ clis, existingNames, onCreate, onClose }: CreateAgentModalProps) {
+  const visibleClis = useMemo(
+    () => (clis ? CLIS.filter((c) => clis.find((a) => a.key === c.key)?.installed) : CLIS),
+    [clis],
+  );
+  const [cliKey, setCliKey] = useState(() => visibleClis[0]?.key ?? "");
+  // Seleciona o primeiro CLI instalado quando a detecção chega/muda.
+  useEffect(() => {
+    setCliKey((cur) => (visibleClis.some((c) => c.key === cur) ? cur : (visibleClis[0]?.key ?? "")));
+  }, [visibleClis]);
   const [model, setModel] = useState(() => DEFAULT_MODEL);
   const [workspace, setWorkspace] = useState("~");
   const [name, setName] = useState("");
@@ -149,7 +160,7 @@ export function CreateAgentModal({ existingNames, onCreate, onClose }: CreateAge
                   role="radiogroup"
                   aria-labelledby="ork-cli-label"
                 >
-                  {CLIS.map((cli) => (
+                  {visibleClis.map((cli) => (
                     <div
                       key={cli.key}
                       role="radio"
@@ -167,10 +178,18 @@ export function CreateAgentModal({ existingNames, onCreate, onClose }: CreateAge
                       <span className="ork-cli-glyph">
                         <CliGlyph size={16} />
                       </span>
-                      <span>{cli.name}</span>
+                      <span>
+                        {cli.name}
+                        {clis?.find((a) => a.key === cli.key)?.headless_ready ? " · headless" : ""}
+                      </span>
                     </div>
                   ))}
                 </div>
+                {clis && visibleClis.length === 0 && (
+                  <span className="ork-error-text" role="alert">
+                    Nenhum CLI suportado (claude, codex, opencode, gemini) encontrado no PATH.
+                  </span>
+                )}
                 {cliError && (
                   <span className="ork-error-text" role="alert">
                     {cliError}

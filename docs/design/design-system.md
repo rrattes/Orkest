@@ -433,3 +433,124 @@ Revisão da implementação (cada item é verificável por captura/inspeção; "
 | Rams nº 8 *minucioso* | Estados completos, tabelas de contraste, vazios e erros especificados |
 | Rams nº 10 *o mínimo possível* | Plano, uma cor de acento, uma assinatura (trilho) |
 | Kuznetsov — luz/profundidade/coreografia como material | Luz e movimento reservados a significado: trilho `running`, pulsação única em `blocked`, elevação em overlays; identidade por forma e composição, não por efeito |
+
+---
+
+## 9. Correção de escala e responsividade
+
+- **Ticket:** ORKEST-006-DESIGN-CORRECTION · **Data:** 2026-11-03
+- **Status:** **PROPOSTA DE CORREÇÃO — aguarda confirmação do Maestro.** Onde houver conflito, esta seção **substitui** as dimensões do modal em §4.3 (560 px, `max-height` 80 vh, padding 24, botões 32, título 18/24, tiles 32). Tokens de cor, tipografia base, estados e demais componentes **não mudam**.
+- **Motivo:** a captura real em janela **941×508** mostrou o modal desproporcional (controles grandes, conteúdo cortado).
+- **Limites de evidência:** não examinei a captura; a correção parte dos números informados e da aritmética da spec. A **causa raiz não foi verificada**: pode ser só a escala dos controles (a §4.3 usava 40 px nos cartões de CLI e 24 px de padding) ou também DPR/zoom do WebKitGTK. Por isso a §9.4 pede diagnóstico antes de qualquer ajuste global. Os totais de altura abaixo são **soma de valores da spec (estimativa)**, não medição; ver V-26.
+
+### 9.1 Controles compactos (tokens exatos)
+
+| Token | Valor | Uso |
+|---|---|---|
+| `--ork-ctl-h` | **28px** | altura de input, select, controle segmentado e botões **dentro de modais/formulários** |
+| `--ork-ctl-h-lg` | 32px | somente o botão primário do estado vazio (§4.2); **não usar no modal** |
+| `--ork-ctl-px` | 8px | padding horizontal interno de input/select; botões usam 12px |
+| `--ork-field-gap` | 12px | espaço vertical entre linhas de campos |
+| `--ork-field-gap-tight` | 8px | entre controle e seu hint, entre prévia e controle |
+| `--ork-section-gap` | 16px | entre seções (Execução / Identidade / Role) |
+| `--ork-label-w` | 72px | coluna de rótulos; gap rótulo→controle 12px |
+| `--ork-tile-sm` | 24px | tile do agente em abas, prévia no modal e listas (glifo 16px) |
+| `--ork-icon-tile` | 28px | tile do seletor de ícone (glifo 16px) |
+| `--ork-icon-gap` | 4px | gap da grade de ícones |
+| `--ork-swatch` | 16px | amostra de cor de identidade (gap 8px) |
+
+**Tipografia dentro do modal** (a escala global §3.4 permanece; estes são papéis adicionais):
+
+| Papel | Tamanho/linha | Peso | Uso |
+|---|---|---|---|
+| `--ork-fs-title-modal` | 16 / 20 | 600 | título do modal (antes 18/24) |
+| `--ork-fs-heading-compact` | 13 / 16 | 600 | cabeçalho de seção (antes 14/20); sem caixa alta |
+| rótulo de campo | 12 / 16 | 500, `text-secondary` | coluna de rótulos |
+| texto de controle | 13 / 16 | 400 | valor em input/select; botões 13/16 peso 500 |
+| hint / erro | 12 / 16 | 400 | `--ork-fs-caption` |
+
+**Dimensões por controle:**
+
+| Controle | Altura | Observação |
+|---|---|---|
+| Input / select / campo mono | 28 | borda 1px `border-control`, raio `r-md`, padding 0 8px, ícone de chevron 16px |
+| Botão (primário/secundário/destrutivo) | 28 | padding 0 12px; botão "Procurar" ao lado do campo de workspace também 28 |
+| Controle segmentado (Tipo) | 28 total | borda 1 + padding 2 + segmentos de 22px |
+| Cartão de CLI (grade 2×2) | **32** (antes 40) | padding 0 8px, glifo 16px, gap interno 8px, gap da grade 8px; selecionado: borda 1,5px `accent` + `accent-subtle` |
+| Cartão de CLI desabilitado ("não instalado") | 32 | duas linhas **empilhadas**: nome 13/14 e tag mono 11/14, padding vertical 2px; nunca quebrar o nome |
+| Prévia da Role | auto, **2 linhas** | mono 11/16, padding 8px 12px, fundo `bg-canvas` |
+
+### 9.2 Modal: geometria, rolagem e cabeçalho/rodapé fixos
+
+| Item | Especificação exata |
+|---|---|
+| Largura | `--ork-modal-w: min(480px, 92vw)` |
+| Altura máxima | `--ork-modal-max-h: min(90vh, calc(100dvh - 24px))`; usar `90vh` como fallback se `dvh` não for suportado |
+| Altura mínima | nenhuma (cresce com o conteúdo até o máximo) |
+| Estrutura | coluna flex: **cabeçalho** (`flex: none`) · **corpo** (`flex: 1 1 auto; min-height: 0; overflow-y: auto`) · **rodapé** (`flex: none`) |
+| Cabeçalho | padding 12px 16px; título 16/20; subtítulo 12/16 (opcional); botão fechar 24×24; hairline inferior `border-subtle`; **sempre visível** |
+| Corpo | padding 12px 16px 16px; `overscroll-behavior: contain`; `scrollbar-gutter: stable`; rolagem só aqui, nunca na página/janela |
+| Rodapé | padding 12px 16px; botões 28px alinhados à direita, gap 8px; hairline superior `border-subtle`; **sempre visível**, nunca rola |
+| Raio / sombra | `r-xl` (8px), `--ork-shadow-modal` (inalterado) |
+| Foco em rolagem | campo focado é rolado para a vista (`scroll-margin: 16px`); o anel de foco (2px + offset 2px = 4px) tem folga ≥ 4px dentro do corpo, sem corte pelo `overflow` |
+| Scrim / fechar | inalterados (§4.3): clique no scrim não fecha |
+
+**Orçamento de altura (estimativa por soma; viewport alvo 941×508):**
+
+| Bloco | Cálculo | px |
+|---|---|---|
+| Cabeçalho (com subtítulo) | 12 + 20 + 2 + 16 + 12 + 1 | 63 |
+| Rodapé | 12 + 28 + 12 + 1 | 53 |
+| Corpo: Execução | título 16+8 · CLI 32×2+8 · 12 · modelo 28 · 12 · workspace 28 | 176 |
+| Corpo: Identidade | título 24 · nome 28 · 12 · ícone (28×2+4=60, +8, amostras 16 = 84) · 12 · tipo 28 | 188 |
+| Corpo: Role | título 24 · select 28 · 8 · prévia 48 | 108 |
+| Corpo: paddings e gaps | 12 + 16 (topo/base) + 16 + 16 (entre seções) | 60 |
+| **Total (estimado)** | 63 + 53 + 176 + 188 + 108 + 60 | **648** |
+
+- Altura disponível a 90vh em 508 px ≈ **457 px** → o corpo mostra ≈ 341 px e **rola ≈ 190 px**. Isso é o comportamento esperado: o modal só cabe sem rolagem com viewport ≥ ≈ 720 px de altura. Garantia exigida: **nada cortado sem alcance** (tudo acessível por rolagem e por Tab), com cabeçalho e rodapé sempre à vista.
+
+**Regras responsivas:**
+
+| Condição de viewport | Regra |
+|---|---|
+| largura < 520 px | rótulo **acima** do controle (coluna única, gap 4px); `--ork-label-w` = 0; grade de ícones continua 8 colunas (252 px cabem) |
+| altura ≤ 600 px | modo compacto: ocultar subtítulo do cabeçalho (−18); ocultar hints de ajuda (erros continuam visíveis); `--ork-section-gap` 12px; prévia da Role recolhida atrás de "Mostrar prévia" (−56) |
+| altura < 360 px (efetiva) | mesmo comportamento; o corpo rola; não adicionar outra regra |
+
+**Janela mínima.** §3.6 definia 960×600, mas a captura (941×508) mostra que esse mínimo **não está sendo imposto**. Proposta (para o Maestro aprovar): impor no Tauri **mínimo 720×480** e manter o modal funcional também abaixo disso pela rolagem do corpo. As abas continuam em 168–240 px com rolagem horizontal (§4.1).
+
+### 9.3 Seletor de ícones (grade compacta)
+
+| Item | Especificação |
+|---|---|
+| Grade | `grid-template-columns: repeat(8, 28px)`; gap `4px`; 16 glifos → **2 linhas**; largura 252 px, altura 60 px |
+| Tile | 28×28, raio `r-md`, glifo 16px; selecionado: borda 1,5px `accent` + `accent-subtle`; hover `bg-hover`; foco `focus-ring` |
+| Alternativa permitida | 10 colunas × 24px (gap 4px = 276 px), glifo 14–16px — só se o Builder precisar de menos altura; **nenhum tile acima de 28px** |
+| Amostras de cor | 8 círculos de 16px, gap 8px, 8px abaixo da grade; selecionada: anel 2px `text-primary` offset 2px; prévia do tile do agente (24px) alinhada à direita |
+| Teclado | grupo `radiogroup`; setas movem a seleção dentro da linha e entre linhas; `Home`/`End` |
+
+### 9.4 Nota HiDPI / `devicePixelRatio` / zoom do WebKitGTK
+
+Princípio: **o layout é definido em pixels CSS e deve se comportar igual em qualquer DPR**; a densidade física muda, as proporções não. Não alterar configuração global do sistema.
+
+1. **Unidade.** Todas as dimensões desta spec são **px CSS**. Não usar a propriedade CSS `zoom`, não multiplicar tamanhos por `devicePixelRatio` em JS e não mudar variáveis de ambiente globais (`GDK_SCALE`, `GDK_DPI_SCALE`, ajustes do compositor) para "consertar" a escala.
+2. **Hairlines e ícones.** Bordas continuam `1px` (renderizam com DPR device pixels, ficando nítidas); ícones são SVG vetoriais em px (sem rasters). Alvo mínimo permanece 24×24 px CSS (V-12).
+3. **Viewport efetivo.** Com zoom do WebView, o viewport em px CSS encolhe (ex.: 941×508 a 150% ≈ 627×339 px CSS). Por isso a geometria da §9.2 usa `min(…vh)`/`vw` e rolagem interna: **deve valer até ≈ 640×360 px CSS**.
+4. **Terminal (xterm).** Reexecutar o `fit` e reportar `cols×rows` à PTY quando mudar o DPR (por exemplo ao mover a janela entre monitores) ou o zoom, além do redimensionamento (§4.4). Fonte do terminal permanece em px (13 px padrão).
+5. **Zoom do usuário.** Se necessário, oferecer **zoom do aplicativo** (não do sistema): `Ctrl+=`, `Ctrl+-`, `Ctrl+0`, faixa 80–150%, passo 10%, persistido na configuração do app, aplicado pela API de zoom do WebView (*o Builder verifica se a API do Tauri 2 expõe isso*). Atalhos só valem fora do terminal com foco, como em §4.1.
+6. **Diagnóstico antes de ajustar.** O Builder registra, na captura de revisão, `window.devicePixelRatio`, `innerWidth × innerHeight` e o fator de escala do compositor. *Como o comportamento do WebKitGTK sob escala fracionária no Wayland não foi verificado aqui, não se deve assumir escala inteira.* Se, mesmo com a §9.1–9.3 aplicada, os controles continuarem grandes em DPR 1, o problema é de implementação (valores não aplicados), não de DPR.
+
+### 9.5 Critérios de aceite adicionais (continuam V-01…V-16)
+
+| ID | Critério | Como verificar |
+|---|---|---|
+| V-17 | Input, select, segmentado e botões do modal medem **28 px** de altura; cartões de CLI **32 px**; nenhum controle do modal ≥ 36 px | DevTools (`getBoundingClientRect`) |
+| V-18 | Largura do modal ≤ 480 px e ≤ 92 vw em 941×508 e em 640×400 | inspeção |
+| V-19 | Em 941×508 e 640×360 (px CSS) cabeçalho e rodapé estão **totalmente visíveis**; o corpo rola (`scrollHeight > clientHeight`) sem rolagem da janela | captura + inspeção |
+| V-20 | Todos os campos são alcançáveis por rolagem e por Tab; campo focado é rolado para a vista e o anel de foco não é cortado | roteiro manual |
+| V-21 | Seletor de ícones: 8 colunas de 28 px (ou 10×24), nenhum tile > 28 px, 16 glifos em 2 linhas | inspeção |
+| V-22 | Sem barra de rolagem horizontal no modal em 640 px de largura; abaixo de 520 px o rótulo fica acima do controle | inspeção |
+| V-23 | Em DPR 1, 1,25, 1,5 e 2, e zoom 100/125/150%: nada de cabeçalho/rodapé cortado, bordas de 1px nítidas, xterm refaz o `fit` e `cols×rows` batem com a PTY | roteiro manual |
+| V-24 | Nenhum uso de CSS `zoom`, escala por `devicePixelRatio` em JS ou mudança de variável de ambiente global para ajustar escala | revisão de código |
+| V-25 | A captura de revisão informa `devicePixelRatio`, `innerWidth × innerHeight` e o tamanho real da janela | anexo da revisão |
+| V-26 | Altura medida do modal fica dentro de ±8 px do orçamento da §9.2 (648 px com tudo visível); divergência maior é investigada | medição |

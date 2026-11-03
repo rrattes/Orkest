@@ -97,6 +97,25 @@ async fn delegate_task(
     .map_err(|x| format!("join: {x}"))?
 }
 
+#[derive(serde::Serialize)]
+struct Diagnostics {
+    app_version: &'static str,
+    /// `tmux -V` output; None when tmux is not installed.
+    tmux: Option<String>,
+}
+
+/// Settings > Sistema > Diagnóstico: read-only shell probe, no state changes.
+#[tauri::command]
+fn diagnostics() -> Diagnostics {
+    let tmux = std::process::Command::new("tmux")
+        .arg("-V")
+        .output()
+        .ok()
+        .filter(|o| o.status.success())
+        .map(|o| String::from_utf8_lossy(&o.stdout).trim().to_string());
+    Diagnostics { app_version: env!("CARGO_PKG_VERSION"), tmux }
+}
+
 /// §7.7 (minimum): which CLIs are installed? Pure PATH scan, no PTY.
 #[tauri::command]
 fn detect_clis() -> Vec<delegation::CliAvail> {
@@ -124,7 +143,8 @@ pub fn run() {
             list_messages,
             mark_message,
             delegate_task,
-            detect_clis
+            detect_clis,
+            diagnostics
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

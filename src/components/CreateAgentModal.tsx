@@ -12,6 +12,8 @@ import {
 import { Listbox } from "./Listbox";
 
 interface CreateAgentModalProps {
+  /** Padrões de Configurações > Agentes ("" = sem preferência). */
+  defaults: { cli: string; model: string; workspace: string };
   /** CLIs detectados no PATH; null = detecção indisponível (mostra todos). */
   clis: CliAvail[] | null;
   existingNames: string[];
@@ -24,18 +26,22 @@ const TYPES: { key: AgentType; label: string }[] = [
   { key: "maestro", label: "Maestro" },
 ];
 
-export function CreateAgentModal({ clis, existingNames, onCreate, onClose }: CreateAgentModalProps) {
+export function CreateAgentModal({ defaults, clis, existingNames, onCreate, onClose }: CreateAgentModalProps) {
   const visibleClis = useMemo(
     () => (clis ? CLIS.filter((c) => clis.find((a) => a.key === c.key)?.installed) : CLIS),
     [clis],
   );
-  const [cliKey, setCliKey] = useState(() => visibleClis[0]?.key ?? "");
+  const [cliKey, setCliKey] = useState(
+    () => visibleClis.find((c) => c.key === defaults.cli)?.key ?? visibleClis[0]?.key ?? "",
+  );
   // Seleciona o primeiro CLI instalado quando a detecção chega/muda.
   useEffect(() => {
     setCliKey((cur) => (visibleClis.some((c) => c.key === cur) ? cur : (visibleClis[0]?.key ?? "")));
   }, [visibleClis]);
-  const [model, setModel] = useState(() => DEFAULT_MODEL);
-  const [workspace, setWorkspace] = useState("~");
+  const [model, setModel] = useState(() =>
+    modelsFor(cliKey).includes(defaults.model) ? defaults.model : DEFAULT_MODEL,
+  );
+  const [workspace, setWorkspace] = useState(defaults.workspace || "~");
   const [name, setName] = useState("");
   const [icon, setIcon] = useState(0);
   const [identityColor, setIdentityColor] = useState(0);

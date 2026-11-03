@@ -8,6 +8,8 @@ import {
   writeInput,
   detectClis,
   reconnectSession,
+  diagnostics,
+  type Diagnostics,
   lastInputAt,
   type CliAvail,
 } from "./lib/tauri";
@@ -17,6 +19,10 @@ import { CreateAgentModal } from "./components/CreateAgentModal";
 import { EmptyState } from "./components/EmptyState";
 import { ContextBar } from "./components/ContextBar";
 import { StateBanner } from "./components/StateBanner";
+import { GearMenu } from "./components/GearMenu";
+import { SettingsDialog } from "./components/SettingsDialog";
+import { ConfirmDialog, KeyValueDialog, ShortcutsDialog } from "./components/Dialogs";
+import { loadSettings, saveSettings, type Settings } from "./lib/settings";
 
 const TERM_FONT_MIN = 10;
 const TERM_FONT_MAX = 20;
@@ -71,10 +77,24 @@ function App() {
   const [modalOpen, setModalOpen] = useState(false);
   const [sizes, setSizes] = useState<Record<string, { cols: number; rows: number }>>({});
   const [termFontSize, setTermFontSize] = useState(loadTermFontSize);
+  const [settings, setSettings] = useState<Settings>(loadSettings);
+  const settingsRef = useRef(settings);
+  settingsRef.current = settings;
+  const [gearOpen, setGearOpen] = useState(false);
+  const [dialog, setDialog] = useState<null | "settings" | "shortcuts" | "diagnostics" | "about">(null);
+  const [pendingClose, setPendingClose] = useState<string | null>(null);
+  const [diag, setDiag] = useState<Diagnostics | null>(null);
   // null = detecção pendente/indisponível (modal mostra todos os CLIs).
   const [clis, setClis] = useState<CliAvail[] | null>(null);
 
   useEffect(() => {
+    saveSettings(settings);
+  }, [settings]);
+
+  useEffect(() => {
+    diagnostics()
+      .then(setDiag)
+      .catch(() => setDiag(null));
     detectClis()
       .then(setClis)
       .catch(() => setClis(null));
@@ -212,7 +232,7 @@ function App() {
   const startSession = useCallback(async (def: AgentDefinition) => {
     const info = await createSession(def.name);
     const avail = clisRef.current?.find((c) => c.key === def.cli);
-    if (!clisRef.current || avail?.installed) {
+    if (settingsRef.current.launchCli && (!clisRef.current || avail?.installed)) {
       window.setTimeout(() => {
         void writeInput(info.id, launchCommand(def.workspace, def.cli)).catch(() => {});
       }, LAUNCH_DELAY_MS);
@@ -277,7 +297,7 @@ function App() {
       ?.focus();
   }, []);
 
-  const closeTab = useCallback(
+  const doCloseTab = useCallback(
     async (id: string) => {
       void closeSession(id).catch(() => {});
       const list = tabsRef.current;
@@ -296,6 +316,21 @@ function App() {
     },
     [],
   );
+
+  // Fecha com confirmação opcional quando o agente está em execução/bloqueado.
+  const closeTab = useCallback(
+    (id: string) => {
+      const t = tabsRef.current.find((x) => x.sessionId === id);
+      const busy = t && (t.status === "running" || t.status === "blocked");
+      if (busy && settingsRef.current.confirmClose) setPendingClose(id);
+      else void doCloseTab(id);
+    },
+    [doCloseTab],
+  );
+
+  const adjustFont = useCallback((v: number) => {
+    setTermFontSize(Math.min(TERM_FONT_MAX, Math.max(TERM_FONT_MIN, v)));
+  }, []);
 
   const onSize = useCallback((sessionId: string, cols: number, rows: number) => {
     setSizes((prev) => ({ ...prev, [sessionId]: { cols, rows } }));
@@ -326,9 +361,25 @@ function App() {
       const ctrlShift = e.ctrlKey && e.shiftKey;
       const altMinus = e.altKey && e.code === "Minus";
 
-      if (inTerminal && !e.altKey && !ctrlShift) return;
+      if (inTerminal && !e.altKey && !ctrlShift && !(e.ctrlKey && e.code === "Comma")) return;
 
-      if (ctrlShift && e.code === "KeyN") {
+      if (e.ctrlKey && !e.shiftKey && !e.altKey && e.code === "Comma") {
+        e.preventDefault();
+        setGearOpen(false);
+        setDialog("settings");
+      } else if (e.ctrlKey && e.altKey === false && !inTerminal && !e.shiftKey && e.code === "Slash") {
+        e.preventDefault();
+        setDialog("shortcuts");
+      } else if (
+        activeIdRef.current &&
+        e.ctrlKey &&
+        !e.altKey &&
+        e.code === "KeyW" &&
+        (ctrlShift || !inTerminal) // Ctrl+W puro é do readline dentro do terminal
+      ) {
+        e.preventDefault();
+        closeTab(activeIdRef.current);
+      } else if (ctrlShift && e.code === "KeyN") {
         e.preventDefault();
         setModalOpen(true);
       } else if (
@@ -348,7 +399,7 @@ function App() {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [cycle]);
+  }, [cycle, closeTab]);
 
   // Persiste a fonte do terminal.
   useEffect(() => {
@@ -370,7 +421,32 @@ function App() {
         onSelect={activateTab}
         onClose={closeTab}
         onAdd={() => setModalOpen(true)}
+        attention={tabs.filter((t) => t.status === "blocked" || t.status === "failed").length}
+        onAttention={() => {
+          const list = tabs.filter((t) => t.status === "blocked" || t.status === "failed");
+          if (list.length === 0) return;
+          const after = list.find((t) => t.sessionId !== activeId) ?? list[0];
+          activateTab(after.sessionId);
+        }}
+        gearOpen={gearOpen}
+        onGear={() => setGearOpen((v) => !v)}
       />
+      {gearOpen && (
+        <GearMenu
+          fontSize={termFontSize}
+          fontMin={TERM_FONT_MIN}
+          fontMax={TERM_FONT_MAX}
+          onFont={adjustFont}
+          launchCli={settings.launchCli}
+          onLaunchCli={(v) => setSettings((cur) => ({ ...cur, launchCli: v }))}
+          version={diag?.app_version ?? "0.1.0"}
+          onSettings={() => setDialog("settings")}
+          onShortcuts={() => setDialog("shortcuts")}
+          onDiagnostics={() => setDialog("diagnostics")}
+          onAbout={() => setDialog("about")}
+          onClose={() => setGearOpen(false)}
+        />
+      )}
 
       <div className="ork-stage" id="ork-terminal">
         {tabs.length === 0 && <EmptyState onAdd={() => setModalOpen(true)} />}
@@ -380,6 +456,7 @@ function App() {
             tab={tab}
             active={tab.sessionId === activeId}
             fontSize={termFontSize}
+            cursor={settings.cursor}
             onSize={onSize}
           />
         ))}
@@ -410,8 +487,73 @@ function App() {
         />
       )}
 
+      {dialog === "settings" && (
+        <SettingsDialog
+          settings={settings}
+          onChange={setSettings}
+          fontSize={termFontSize}
+          fontMin={TERM_FONT_MIN}
+          fontMax={TERM_FONT_MAX}
+          onFont={adjustFont}
+          onRestoreFont={() => setTermFontSize(TERM_FONT_DEFAULT)}
+          clis={clis}
+          version={diag?.app_version ?? "0.1.0"}
+          onDiagnostics={() => setDialog("diagnostics")}
+          onClose={() => setDialog(null)}
+        />
+      )}
+      {dialog === "shortcuts" && <ShortcutsDialog onClose={() => setDialog(null)} />}
+      {dialog === "diagnostics" && (
+        <KeyValueDialog
+          id="ork-diag-title"
+          title="Diagnóstico"
+          onClose={() => setDialog(null)}
+          rows={[
+            ["Orkest", `v${diag?.app_version ?? "?"}`],
+            ["tmux", diag ? (diag.tmux ?? "não encontrado") : "indisponível"],
+            [
+              "CLIs",
+              clis
+                ? clis.map((c) => `${c.key}: ${c.installed ? "instalado" : "ausente"}${c.headless_ready ? " (headless)" : ""}`).join("\n")
+                : "detecção indisponível",
+            ],
+            ["Janela", `${window.innerWidth}×${window.innerHeight} @ DPR ${window.devicePixelRatio}`],
+            ["Sessões abertas", String(tabs.length)],
+          ]}
+        />
+      )}
+      {dialog === "about" && (
+        <KeyValueDialog
+          id="ork-about-title"
+          title="Sobre o Orkest"
+          onClose={() => setDialog(null)}
+          rows={[
+            ["Versão", `v${diag?.app_version ?? "?"}`],
+            ["Descrição", "Terminal de agentes (Tauri 2 + Rust + xterm.js)"],
+          ]}
+        />
+      )}
+      {pendingClose && (
+        <ConfirmDialog
+          title="Fechar agente em execução?"
+          message={`"${tabs.find((t) => t.sessionId === pendingClose)?.agent.name ?? "O agente"}" ainda está em atividade. Fechar encerra a sessão tmux e a tarefa em curso.`}
+          confirmLabel="Fechar agente"
+          onCancel={() => setPendingClose(null)}
+          onConfirm={() => {
+            const id = pendingClose;
+            setPendingClose(null);
+            void doCloseTab(id);
+          }}
+        />
+      )}
+
       {modalOpen && (
         <CreateAgentModal
+          defaults={{
+            cli: settings.defaultCli,
+            model: settings.defaultModel,
+            workspace: settings.defaultWorkspace,
+          }}
           clis={clis}
           existingNames={tabs.map((t) => t.agent.name)}
           onCreate={createAgent}

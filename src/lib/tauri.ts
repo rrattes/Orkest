@@ -56,3 +56,12 @@ export interface Message {
   state: "pending" | "delivered" | "read" | "done" | "failed";
   timestamp: number;
 }
+
+export interface Diagnostics {
+  app_version: string;
+  tmux: string | null; // saída de `tmux -V`; null = não encontrado
+}
+
+export function diagnostics(): Promise<Diagnostics> {
+  return invoke<Diagnostics>("diagnostics");
+}

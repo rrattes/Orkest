@@ -11,6 +11,7 @@ interface TerminalPanelProps {
   tab: Tab;
   active: boolean;
   fontSize: number;
+  cursor: "block" | "bar";
   onSize: (sessionId: string, cols: number, rows: number) => void;
 }
 
@@ -32,13 +33,15 @@ function pasteInto(term: Terminal) {
   }
 }
 
-export function TerminalPanel({ tab, active, fontSize, onSize }: TerminalPanelProps) {
+export function TerminalPanel({ tab, active, fontSize, cursor, onSize }: TerminalPanelProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const termRef = useRef<Terminal | null>(null);
   const fitRef = useRef<FitAddon | null>(null);
   const [focused, setFocused] = useState(false);
   const onSizeRef = useRef(onSize);
   onSizeRef.current = onSize;
+  const cursorRef = useRef(cursor);
+  cursorRef.current = cursor;
   const fontSizeRef = useRef(fontSize);
   fontSizeRef.current = fontSize;
 
@@ -49,7 +52,7 @@ export function TerminalPanel({ tab, active, fontSize, onSize }: TerminalPanelPr
 
     const term = new Terminal({
       cursorBlink: true,
-      cursorStyle: "block",
+      cursorStyle: cursorRef.current,
       cursorInactiveStyle: "outline",
       fontFamily: readToken("--ork-font-mono-family"),
       fontSize: fontSizeRef.current,
@@ -196,6 +199,12 @@ export function TerminalPanel({ tab, active, fontSize, onSize }: TerminalPanelPr
     term.blur();
     return undefined;
   }, [active]);
+
+  // Estilo do cursor (Configurações > Cursor): aplica ao vivo.
+  useEffect(() => {
+    const term = termRef.current;
+    if (term) term.options.cursorStyle = cursor;
+  }, [cursor]);
 
   // Ajusta o tamanho da fonte do terminal e refaz o fit (§9.4).
   useEffect(() => {

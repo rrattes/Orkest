@@ -81,10 +81,11 @@
   --ork-font-mono: "JetBrains Mono", ui-monospace, "DejaVu Sans Mono", monospace;
   --ork-font-mono-family: "JetBrains Mono";
 
-  --ork-fs-title: 18px;
-  --ork-fs-heading: 14px;
   --ork-fs-body: 13px;
-  --ork-fs-label: 13px;
+  --ork-fs-label: 12px;
+  --ork-fs-heading: 12px;
+  --ork-fs-modal-title: 14px;
+  --ork-fs-empty-title: 16px;
   --ork-fs-meta: 11px;
   --ork-fs-caption: 12px;
   --ork-fs-terminal: 13px;
@@ -119,6 +120,23 @@
   --ork-dur-base: 180ms;
   --ork-dur-loop: 1600ms;
   --ork-ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+
+  /* Dimensões (§9.1, DPR 1) */
+  --ork-tabbar-h: 40px;
+  --ork-ctxbar-h: 24px;
+  --ork-ctl-h: 36px;
+  --ork-btn-h: 32px;
+  --ork-ctl-px: 12px;
+  --ork-field-gap: 12px;
+  --ork-field-gap-tight: 8px;
+  --ork-section-gap: 16px;
+  --ork-label-w: 80px;
+  --ork-tile-sm: 24px;
+  --ork-icon-tile: 36px;
+  --ork-icon-gap: 4px;
+  --ork-swatch: 20px;
+  --ork-modal-w: min(560px, 92vw);
+  --ork-modal-max-h: min(85vh, calc(100dvh - 24px));
 }
 
 /* ============================================================================
@@ -180,9 +198,36 @@ button {
   cursor: pointer;
 }
 
+/* Controles interativos não selecionam texto (o terminal é exceção) */
+.ork-tab,
+.ork-add,
+.ork-tab-close,
+.ork-btn,
+.ork-cli-card,
+.ork-icon-cell,
+.ork-color-swatch,
+.ork-segmented button,
+.ork-modal-close,
+.ork-listbox-trigger,
+.ork-listbox-option {
+  user-select: none;
+  -webkit-user-select: none;
+}
+
 :focus-visible {
   outline: 2px solid var(--ork-accent);
   outline-offset: 2px;
+}
+
+/* Controles não selecionáveis (P3) — o terminal permanece selecionável. */
+button,
+.ork-input,
+.ork-select,
+.ork-field-label,
+.ork-cli-card,
+.ork-icon-cell,
+.ork-color-swatch {
+  user-select: none;
 }
 
 /* ============================================================================
@@ -203,7 +248,7 @@ button {
   flex: none;
   display: flex;
   align-items: stretch;
-  height: 44px;
+  height: var(--ork-tabbar-h);
   background: var(--ork-bg-chrome);
   border-bottom: 1px solid var(--ork-border-subtle);
 }
@@ -275,7 +320,7 @@ button {
 }
 
 .ork-tab-name {
-  font-size: var(--ork-fs-label);
+  font-size: var(--ork-fs-body);
   font-weight: 500;
   line-height: 16px;
   white-space: nowrap;
@@ -370,19 +415,21 @@ button {
   }
 }
 
-/* Botão "+" (32px, fixo à direita, §4.2) */
+/* Botão "+" (32px, junto à última aba; sticky quando rola, §9.2 / F6) */
 .ork-add {
+  position: sticky;
+  right: 0;
   flex: none;
   width: 32px;
   height: 32px;
-  margin: 6px 8px;
+  margin: 4px 8px;
   padding: 0;
   display: flex;
   align-items: center;
   justify-content: center;
   border: none;
   border-radius: var(--ork-r-md);
-  background: transparent;
+  background: var(--ork-bg-chrome);
   color: var(--ork-text-secondary);
 }
 .ork-add:hover {
@@ -458,7 +505,7 @@ button {
 }
 .ork-empty h1 {
   margin: 0;
-  font-size: var(--ork-fs-title);
+  font-size: var(--ork-fs-empty-title);
   font-weight: 600;
   line-height: 24px;
   color: var(--ork-text-primary);
@@ -467,6 +514,11 @@ button {
   margin: 0;
   font-size: var(--ork-fs-body);
   color: var(--ork-text-secondary);
+}
+.ork-empty-hint {
+  font-family: var(--ork-font-mono);
+  font-size: var(--ork-fs-caption);
+  color: var(--ork-text-tertiary);
 }
 
 /* ============================================================================
@@ -504,11 +556,11 @@ button {
   align-items: center;
   justify-content: center;
   gap: 6px;
-  height: 32px;
+  height: var(--ork-btn-h);
   padding: 0 14px;
   border-radius: var(--ork-r-md);
   border: 1px solid transparent;
-  font-size: var(--ork-fs-label);
+  font-size: var(--ork-fs-body);
   font-weight: 500;
   line-height: 16px;
   transition: background-color var(--ork-dur-fast) var(--ork-ease-out),
@@ -560,13 +612,20 @@ button {
 .ork-modal {
   display: flex;
   flex-direction: column;
-  width: 560px;
-  max-width: 92vw;
-  max-height: 80vh;
+  width: var(--ork-modal-w);
+  max-height: var(--ork-modal-max-h);
   background: var(--ork-bg-surface);
   border-radius: var(--ork-r-xl);
   box-shadow: var(--ork-shadow-modal);
   overflow: hidden;
+}
+
+/* Formulário preenche a área restante; só o corpo rola (§9.2). */
+.ork-modal-form {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
 }
 
 .ork-modal-header {
@@ -574,18 +633,19 @@ button {
   align-items: flex-start;
   justify-content: space-between;
   gap: 12px;
-  padding: 24px 24px 0;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--ork-border-subtle);
 }
 .ork-modal-title {
   margin: 0;
-  font-size: var(--ork-fs-title);
+  font-size: var(--ork-fs-modal-title);
   font-weight: 600;
-  line-height: 24px;
+  line-height: 20px;
   color: var(--ork-text-primary);
 }
 .ork-modal-subtitle {
-  margin: 4px 0 0;
-  font-size: var(--ork-fs-body);
+  margin: 2px 0 0;
+  font-size: var(--ork-fs-caption);
   color: var(--ork-text-secondary);
 }
 .ork-modal-close {
@@ -608,45 +668,57 @@ button {
 
 .ork-modal-body {
   flex: 1 1 auto;
+  min-height: 0;
   overflow-y: auto;
-  padding: 16px 24px 24px;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+  padding: 12px 16px 16px;
 }
 .ork-modal-footer {
   flex: none;
   display: flex;
   justify-content: flex-end;
   gap: 8px;
-  padding: 16px 24px;
+  padding: 12px 16px;
   border-top: 1px solid var(--ork-border-subtle);
 }
 
 .ork-section-title {
-  margin: 16px 0 12px;
+  margin: var(--ork-section-gap) 0 12px;
   font-size: var(--ork-fs-heading);
   font-weight: 600;
-  line-height: 20px;
-  color: var(--ork-text-primary);
+  line-height: 16px;
+  color: var(--ork-text-secondary);
 }
 .ork-section-title:first-child {
   margin-top: 0;
 }
 
+/* Campo com rótulo em coluna de 80px à esquerda (>=560px) (§9.1) */
 .ork-field {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  margin-bottom: 16px;
+  display: grid;
+  grid-template-columns: var(--ork-label-w) minmax(0, 1fr);
+  column-gap: 12px;
+  align-items: start;
+  margin-bottom: var(--ork-field-gap);
 }
 .ork-field-label {
   font-size: var(--ork-fs-label);
   font-weight: 500;
   line-height: 16px;
-  color: var(--ork-text-primary);
+  color: var(--ork-text-secondary);
+  padding-top: 10px;
+}
+.ork-field-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ork-field-gap-tight);
+  min-width: 0;
 }
 
 .ork-input {
-  height: 32px;
-  padding: 0 10px;
+  height: var(--ork-ctl-h);
+  padding: 0 var(--ork-ctl-px);
   background: var(--ork-bg-raised);
   border: 1px solid var(--ork-border-control);
   border-radius: var(--ork-r-md);
@@ -674,9 +746,84 @@ button {
   padding-right: 28px;
   background-image: linear-gradient(45deg, transparent 50%, var(--ork-text-tertiary) 50%),
     linear-gradient(135deg, var(--ork-text-tertiary) 50%, transparent 50%);
-  background-position: calc(100% - 15px) 13px, calc(100% - 10px) 13px;
+  background-position: calc(100% - 15px) 16px, calc(100% - 10px) 16px;
   background-size: 5px 5px, 5px 5px;
   background-repeat: no-repeat;
+}
+
+/* Listbox custom (substitui <select> nativo; tokens do §3) */
+.ork-listbox {
+  position: relative;
+  width: 100%;
+}
+.ork-listbox-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  height: var(--ork-ctl-h);
+  padding: 0 var(--ork-ctl-px);
+  background: var(--ork-bg-raised);
+  border: 1px solid var(--ork-border-control);
+  border-radius: var(--ork-r-md);
+  color: var(--ork-text-primary);
+  font-size: var(--ork-fs-body);
+  text-align: left;
+  cursor: pointer;
+}
+.ork-listbox-trigger:disabled {
+  color: var(--ork-text-disabled);
+  cursor: not-allowed;
+}
+.ork-listbox-trigger.is-open {
+  border-color: var(--ork-accent);
+}
+.ork-listbox-value.is-placeholder {
+  color: var(--ork-text-tertiary);
+}
+.ork-listbox-chevron {
+  color: var(--ork-text-tertiary);
+  transition: transform var(--ork-dur-fast) var(--ork-ease-out);
+}
+.ork-listbox-trigger.is-open .ork-listbox-chevron {
+  transform: rotate(180deg);
+}
+.ork-listbox-pop {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  z-index: 60;
+  max-height: calc(32px * 6 + 8px);
+  overflow-y: auto;
+  background: var(--ork-bg-surface);
+  border: 1px solid var(--ork-border);
+  border-radius: var(--ork-r-md);
+  box-shadow: var(--ork-shadow-pop);
+  padding: 4px;
+}
+.ork-listbox-option {
+  display: flex;
+  align-items: center;
+  height: 32px;
+  padding: 0 8px;
+  border-radius: var(--ork-r-sm);
+  color: var(--ork-text-primary);
+  font-size: var(--ork-fs-body);
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ork-listbox-option:hover {
+  background: var(--ork-bg-raised);
+}
+.ork-listbox-option.is-selected {
+  background: var(--ork-accent-subtle);
+}
+.ork-listbox-option.is-highlighted {
+  background: var(--ork-bg-raised);
 }
 
 .ork-workspace-row {
@@ -735,7 +882,7 @@ button {
   display: flex;
   align-items: center;
   gap: 8px;
-  height: 40px;
+  height: var(--ork-ctl-h);
   padding: 0 12px;
   border: 1.5px solid var(--ork-border-control);
   border-radius: var(--ork-r-md);
@@ -752,16 +899,22 @@ button {
   background: var(--ork-accent-subtle);
   color: var(--ork-text-primary);
 }
+.ork-cli-card .ork-cli-glyph {
+  color: var(--ork-text-tertiary);
+}
+.ork-cli-card.is-selected .ork-cli-glyph {
+  color: var(--ork-accent);
+}
 
-/* Grade de glifos (16, 8 por linha, §4.3) */
+/* Grade de glifos (16, 8×2, §9.3) */
 .ork-icon-grid {
   display: grid;
-  grid-template-columns: repeat(8, 1fr);
-  gap: 6px;
+  grid-template-columns: repeat(8, var(--ork-icon-tile));
+  gap: var(--ork-icon-gap);
 }
 .ork-icon-cell {
-  aspect-ratio: 1;
-  width: 100%;
+  width: var(--ork-icon-tile);
+  height: var(--ork-icon-tile);
   padding: 0;
   display: flex;
   align-items: center;
@@ -783,12 +936,12 @@ button {
 
 .ork-color-row {
   display: flex;
-  gap: 6px;
+  gap: 8px;
   margin-top: 8px;
 }
 .ork-color-swatch {
-  width: 16px;
-  height: 16px;
+  width: var(--ork-swatch);
+  height: var(--ork-swatch);
   padding: 0;
   border-radius: 50%;
   border: 1.5px solid transparent;
@@ -808,12 +961,12 @@ button {
   overflow: hidden;
 }
 .ork-segmented button {
-  height: 32px;
+  height: var(--ork-ctl-h);
   padding: 0 16px;
   border: none;
   background: transparent;
   color: var(--ork-text-secondary);
-  font-size: var(--ork-fs-label);
+  font-size: var(--ork-fs-body);
   font-weight: 500;
 }
 .ork-segmented button:hover:not(.is-selected) {
@@ -846,6 +999,34 @@ button {
 @keyframes ork-spin {
   to {
     transform: rotate(360deg);
+  }
+}
+
+/* ============================================================================
+   Responsividade (§9.2)
+   ============================================================================ */
+/* Largura < 560px: rótulo acima do controle */
+@media (max-width: 559px) {
+  .ork-field {
+    grid-template-columns: 1fr;
+    row-gap: 4px;
+  }
+  .ork-field-label {
+    padding-top: 0;
+  }
+}
+
+/* Altura <= 600px: modo compacto */
+@media (max-height: 600px) {
+  :root {
+    --ork-ctl-h: 34px;
+    --ork-section-gap: 12px;
+  }
+  .ork-modal-subtitle {
+    display: none;
+  }
+  .ork-help {
+    display: none;
   }
 }
 

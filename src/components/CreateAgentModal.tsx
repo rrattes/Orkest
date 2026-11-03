@@ -8,6 +8,7 @@ import {
   IDENTITY_COLORS,
   identityVar,
 } from "./icons";
+import { Listbox } from "./Listbox";
 
 interface CreateAgentModalProps {
   existingNames: string[];
@@ -115,7 +116,7 @@ export function CreateAgentModal({ existingNames, onCreate, onClose }: CreateAge
           </button>
         </div>
 
-        <form onSubmit={submit} noValidate>
+        <form className="ork-modal-form" onSubmit={submit} noValidate>
           <div className="ork-modal-body">
             {error && (
               <div className="ork-banner" role="alert">
@@ -136,77 +137,80 @@ export function CreateAgentModal({ existingNames, onCreate, onClose }: CreateAge
               <span className="ork-field-label" id="ork-cli-label">
                 CLI
               </span>
-              <div
-                className="ork-cli-grid"
-                role="radiogroup"
-                aria-labelledby="ork-cli-label"
-              >
-                {CLIS.map((cli) => (
-                  <div
-                    key={cli.key}
-                    role="radio"
-                    aria-checked={cliKey === cli.key}
-                    tabIndex={0}
-                    className={`ork-cli-card${cliKey === cli.key ? " is-selected" : ""}`}
-                    onClick={() => selectCli(cli.key)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" || e.key === " ") {
-                        e.preventDefault();
-                        selectCli(cli.key);
-                      }
-                    }}
-                  >
-                    <CliGlyph size={16} />
-                    <span>{cli.name}</span>
-                  </div>
-                ))}
+              <div className="ork-field-body">
+                <div
+                  className="ork-cli-grid"
+                  role="radiogroup"
+                  aria-labelledby="ork-cli-label"
+                >
+                  {CLIS.map((cli) => (
+                    <div
+                      key={cli.key}
+                      role="radio"
+                      aria-checked={cliKey === cli.key}
+                      tabIndex={0}
+                      className={`ork-cli-card${cliKey === cli.key ? " is-selected" : ""}`}
+                      onClick={() => selectCli(cli.key)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          selectCli(cli.key);
+                        }
+                      }}
+                    >
+                      <span className="ork-cli-glyph">
+                        <CliGlyph size={16} />
+                      </span>
+                      <span>{cli.name}</span>
+                    </div>
+                  ))}
+                </div>
+                {cliError && (
+                  <span className="ork-error-text" role="alert">
+                    {cliError}
+                  </span>
+                )}
               </div>
-              {cliError && (
-                <span className="ork-error-text" role="alert">
-                  {cliError}
-                </span>
-              )}
             </div>
 
             <div className="ork-field">
               <label className="ork-field-label" htmlFor="ork-model">
                 Modelo
               </label>
-              <select
-                id="ork-model"
-                className="ork-input ork-select"
-                value={model}
-                disabled={!cliKey}
-                onChange={(e) => setModel(e.target.value)}
-              >
-                {modelsFor(cliKey).map((m) => (
-                  <option key={m} value={m}>
-                    {m}
-                  </option>
-                ))}
-              </select>
+              <div className="ork-field-body">
+                <Listbox
+                  id="ork-model"
+                  value={model}
+                  options={modelsFor(cliKey)}
+                  onChange={setModel}
+                  disabled={!cliKey}
+                  ariaLabel="Modelo"
+                />
+              </div>
             </div>
 
             <div className="ork-field">
               <label className="ork-field-label" htmlFor="ork-workspace">
                 Workspace
               </label>
-              <div className="ork-workspace-row">
-                <input
-                  id="ork-workspace"
-                  className="ork-input ork-input-mono"
-                  value={workspace}
-                  onChange={(e) => setWorkspace(e.target.value)}
-                  spellCheck={false}
-                />
-                <button
-                  type="button"
-                  className="ork-btn ork-btn-secondary"
-                  disabled
-                  title="Seletor de pasta nativo (marco futuro)"
-                >
-                  Procurar
-                </button>
+              <div className="ork-field-body">
+                <div className="ork-workspace-row">
+                  <input
+                    id="ork-workspace"
+                    className="ork-input ork-input-mono"
+                    value={workspace}
+                    onChange={(e) => setWorkspace(e.target.value)}
+                    spellCheck={false}
+                  />
+                  <button
+                    type="button"
+                    className="ork-btn ork-btn-secondary"
+                    disabled
+                    title="Seletor de pasta nativo (marco futuro)"
+                  >
+                    Procurar
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -216,64 +220,68 @@ export function CreateAgentModal({ existingNames, onCreate, onClose }: CreateAge
               <label className="ork-field-label" htmlFor="ork-name">
                 Nome
               </label>
-              <input
-                id="ork-name"
-                ref={nameRef}
-                className={`ork-input${touched.name && nameError ? " is-error" : ""}`}
-                value={name}
-                placeholder={suggestedName}
-                aria-invalid={touched.name && !!nameError}
-                aria-describedby={nameError ? "ork-name-error" : undefined}
-                onChange={(e) => setName(e.target.value)}
-                onBlur={() => setTouched((t) => ({ ...t, name: true }))}
-                spellCheck={false}
-              />
-              {touched.name && nameError && (
-                <span className="ork-error-text" id="ork-name-error" role="alert">
-                  {nameError}
-                </span>
-              )}
+              <div className="ork-field-body">
+                <input
+                  id="ork-name"
+                  ref={nameRef}
+                  className={`ork-input${touched.name && nameError ? " is-error" : ""}`}
+                  value={name}
+                  placeholder={suggestedName}
+                  aria-invalid={touched.name && !!nameError}
+                  aria-describedby={nameError ? "ork-name-error" : undefined}
+                  onChange={(e) => setName(e.target.value)}
+                  onBlur={() => setTouched((t) => ({ ...t, name: true }))}
+                  spellCheck={false}
+                />
+                {touched.name && nameError && (
+                  <span className="ork-error-text" id="ork-name-error" role="alert">
+                    {nameError}
+                  </span>
+                )}
+              </div>
             </div>
 
             <div className="ork-field">
               <span className="ork-field-label" id="ork-icon-label">
                 Ícone
               </span>
-              <div
-                className="ork-icon-grid"
-                role="radiogroup"
-                aria-labelledby="ork-icon-label"
-              >
-                {Array.from({ length: 16 }, (_, i) => (
-                  <button
-                    key={i}
-                    type="button"
-                    role="radio"
-                    aria-checked={icon === i}
-                    className={`ork-icon-cell${icon === i ? " is-selected" : ""}`}
-                    onClick={() => setIcon(i)}
-                  >
-                    <AgentGlyph glyph={i} size={18} />
-                  </button>
-                ))}
-              </div>
-              <div
-                className="ork-color-row"
-                role="radiogroup"
-                aria-label="Cor de identidade"
-              >
-                {IDENTITY_COLORS.map((c, i) => (
-                  <button
-                    key={c}
-                    type="button"
-                    role="radio"
-                    aria-checked={identityColor === i}
-                    aria-label={`Cor ${c}`}
-                    className={`ork-color-swatch${identityColor === i ? " is-selected" : ""}`}
-                    style={{ backgroundColor: identityVar(c) }}
-                    onClick={() => setIdentityColor(i)}
-                  />
-                ))}
+              <div className="ork-field-body">
+                <div
+                  className="ork-icon-grid"
+                  role="radiogroup"
+                  aria-labelledby="ork-icon-label"
+                >
+                  {Array.from({ length: 16 }, (_, i) => (
+                    <button
+                      key={i}
+                      type="button"
+                      role="radio"
+                      aria-checked={icon === i}
+                      className={`ork-icon-cell${icon === i ? " is-selected" : ""}`}
+                      onClick={() => setIcon(i)}
+                    >
+                      <AgentGlyph glyph={i} size={18} />
+                    </button>
+                  ))}
+                </div>
+                <div
+                  className="ork-color-row"
+                  role="radiogroup"
+                  aria-label="Cor de identidade"
+                >
+                  {IDENTITY_COLORS.map((c, i) => (
+                    <button
+                      key={c}
+                      type="button"
+                      role="radio"
+                      aria-checked={identityColor === i}
+                      aria-label={`Cor ${c}`}
+                      className={`ork-color-swatch${identityColor === i ? " is-selected" : ""}`}
+                      style={{ backgroundColor: identityVar(c) }}
+                      onClick={() => setIdentityColor(i)}
+                    />
+                  ))}
+                </div>
               </div>
             </div>
 
@@ -281,25 +289,27 @@ export function CreateAgentModal({ existingNames, onCreate, onClose }: CreateAge
               <span className="ork-field-label" id="ork-type-label">
                 Tipo
               </span>
-              <div className="ork-segmented" role="radiogroup" aria-labelledby="ork-type-label">
-                {TYPES.map((t) => (
-                  <button
-                    key={t.key}
-                    type="button"
-                    role="radio"
-                    aria-checked={type === t.key}
-                    className={type === t.key ? "is-selected" : ""}
-                    onClick={() => setType(t.key)}
-                  >
-                    {t.label}
-                  </button>
-                ))}
+              <div className="ork-field-body">
+                <div className="ork-segmented" role="radiogroup" aria-labelledby="ork-type-label">
+                  {TYPES.map((t) => (
+                    <button
+                      key={t.key}
+                      type="button"
+                      role="radio"
+                      aria-checked={type === t.key}
+                      className={type === t.key ? "is-selected" : ""}
+                      onClick={() => setType(t.key)}
+                    >
+                      {t.label}
+                    </button>
+                  ))}
+                </div>
+                <span className="ork-help">
+                  {type === "maestro"
+                    ? "Coordena outros agentes no workspace."
+                    : "Executa tarefas específicas sob coordenação."}
+                </span>
               </div>
-              <span className="ork-help">
-                {type === "maestro"
-                  ? "Coordena outros agentes no workspace."
-                  : "Executa tarefas específicas sob coordenação."}
-              </span>
             </div>
 
             <h3 className="ork-section-title">Role</h3>
@@ -308,28 +318,22 @@ export function CreateAgentModal({ existingNames, onCreate, onClose }: CreateAge
               <label className="ork-field-label" htmlFor="ork-role">
                 Role
               </label>
-              <select
-                id="ork-role"
-                className="ork-input ork-select"
-                value={role}
-                onChange={(e) => setRole(e.target.value)}
-              >
-                <option value="">Selecionar role…</option>
-                {ROLES.map((r) => (
-                  <option key={r.label} value={r.label}>
-                    {r.label}
-                  </option>
-                ))}
-                <option value="" disabled>
-                  Nova role… (marco futuro)
-                </option>
-              </select>
-              {role && (
-                <div className="ork-role-preview">
-                  {ROLES.find((r) => r.label === role)?.desc ??
-                    "Role personalizada (editor fora do escopo desta versão)."}
-                </div>
-              )}
+              <div className="ork-field-body">
+                <Listbox
+                  id="ork-role"
+                  value={role}
+                  options={ROLES.map((r) => r.label)}
+                  onChange={setRole}
+                  placeholder="Selecionar role…"
+                  ariaLabel="Role"
+                />
+                {role && (
+                  <div className="ork-role-preview">
+                    {ROLES.find((r) => r.label === role)?.desc ??
+                      "Role personalizada (editor fora do escopo desta versão)."}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 

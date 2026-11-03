@@ -81,6 +81,9 @@ impl SessionManager {
 
         let mut args = self.tmux_base();
         args.extend(["new-session".into(), "-A".into(), "-s".into(), tmux_name.clone()]);
+        // Hide the tmux status bar for THIS session only (session-scoped option,
+        // no ~/.tmux.conf, never shows the session UUID). `;` chains a tmux command.
+        args.extend([";".into(), "set-option".into(), "status".into(), "off".into()]);
         let mut cmd = CommandBuilder::new(&args[0]);
         cmd.args(&args[1..]);
         cmd.env("TERM", "xterm-256color");
@@ -199,6 +202,7 @@ mod tests {
         }
         println!("--- PTY output ---\n{acc}\n------------------");
         mgr.close(&info.id).expect("close");
+        assert!(!acc.contains(&info.id), "tmux status/UUID leaked into terminal: {acc:?}");
         assert!(acc.contains("orkest-42"), "round-trip failed: {acc:?}");
         // cleanup tmux server on the test socket
         let _ = std::process::Command::new("tmux").args(["-L", &socket, "kill-server"]).output();

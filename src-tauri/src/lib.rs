@@ -1,4 +1,5 @@
 mod broker;
+mod delegation;
 mod sessions;
 
 use broker::{Broker, Kind, Message, NewMessage, State as MsgState};
@@ -59,6 +60,34 @@ fn mark_message(
     broker.mark(&id, state, kind)
 }
 
+/// ORKEST-M2-1: one delegation round-trip. `async` so the long headless CLI run
+/// cannot freeze the UI thread; the flow runs on the blocking thread-pool with a
+/// second SQLite connection on the same DB (no PTY, no tmux — ADR-0002).
+#[tauri::command]
+async fn delegate_task(
+    args: delegation::DelegateArgs,
+    broker: State<'_, Broker>,
+) -> Result<delegation::DelegateOutcome, String> {
+    let db_path = broker.path().to_path_buf();
+    let timeout_ms = args.timeout_ms.unwrap_or(delegation::DEFAULT_TIMEOUT_MS);
+    let runner = move |cli_key: &str, text: &str, cwd: &std::path::Path| -> Result<String, String> {
+        let argv = delegation::delegate_cmd(cli_key, text)?;
+        delegation::run_headless(&argv, cwd, timeout_ms)
+    };
+    tauri::async_runtime::spawn_blocking(move || {
+        let b = Broker::open(&db_path)?;
+        delegation::delegate_flow(&b, &args, &runner)
+    })
+    .await
+    .map_err(|x| format!("join: {x}"))?
+}
+
+/// §7.7 (minimum): which CLIs are installed? Pure PATH scan, no PTY.
+#[tauri::command]
+fn detect_clis() -> Vec<delegation::CliAvail> {
+    delegation::detect_clis()
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -77,7 +106,9 @@ pub fn run() {
             close_session,
             send_message,
             list_messages,
-            mark_message
+            mark_message,
+            delegate_task,
+            detect_clis
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

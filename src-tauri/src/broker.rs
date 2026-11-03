@@ -3,7 +3,7 @@
 
 use rusqlite::{params, Connection, Row};
 use serde::{Deserialize, Serialize};
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::sync::Mutex;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -65,6 +65,8 @@ pub struct NewMessage {
 
 pub struct Broker {
     db: Mutex<Connection>,
+    /// DB path kept for opening a second connection off-thread (delegate_task).
+    path: PathBuf,
 }
 
 fn e<E: std::fmt::Display>(x: E) -> String {
@@ -93,15 +95,15 @@ const COLS: &str = "id, task_id, from_agent, to_agent, kind, payload, state, 0, 
 
 impl Broker {
     pub fn open(path: &Path) -> Result<Self, String> {
-        Self::init(Connection::open(path).map_err(e)?)
+        Self::init(Connection::open(path).map_err(e)?, Some(path.to_path_buf()))
     }
 
     #[allow(dead_code)]
     pub fn open_in_memory() -> Result<Self, String> {
-        Self::init(Connection::open_in_memory().map_err(e)?)
+        Self::init(Connection::open_in_memory().map_err(e)?, None)
     }
 
-    fn init(conn: Connection) -> Result<Self, String> {
+    fn init(conn: Connection, path: Option<PathBuf>) -> Result<Self, String> {
         conn.execute_batch(
             "CREATE TABLE IF NOT EXISTS messages (
                seq INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -117,7 +119,15 @@ impl Broker {
              CREATE INDEX IF NOT EXISTS idx_messages_task ON messages(task_id, seq);",
         )
         .map_err(e)?;
-        Ok(Self { db: Mutex::new(conn) })
+        Ok(Self {
+            db: Mutex::new(conn),
+            path: path.unwrap_or_else(|| std::path::PathBuf::from(":memory:")),
+        })
+    }
+
+    /// The DB path this broker owns (re-opening off-thread uses it).
+    pub fn path(&self) -> &Path {
+        &self.path
     }
 
     pub fn send(&self, m: NewMessage) -> Result<Message, String> {

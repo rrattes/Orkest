@@ -142,11 +142,11 @@ export function CreateAgentModal({ defaults, clis, existingNames, onCreate, onCl
         <form className="ork-modal-form" onSubmit={submit} noValidate>
           <div className="ork-modal-body">
             {error && (
-              <div className="ork-banner" role="alert">
+              <div className="ork-form-error" role="alert">
                 <span>{error}</span>
                 <button
                   type="button"
-                  className="ork-banner-retry"
+                  className="ork-form-error-retry"
                   onClick={() => setError(null)}
                 >
                   Tentar de novo

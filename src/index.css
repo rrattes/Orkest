@@ -972,7 +972,7 @@ button,
   color: var(--ork-text-tertiary);
 }
 
-.ork-banner {
+.ork-form-error {
   display: flex;
   align-items: center;
   gap: 12px;
@@ -983,7 +983,7 @@ button,
   color: var(--ork-text-primary);
   font-size: var(--ork-fs-body);
 }
-.ork-banner-retry {
+.ork-form-error-retry {
   flex: none;
   height: 24px;
   padding: 0 10px;
@@ -994,7 +994,7 @@ button,
   font-size: var(--ork-fs-caption);
   font-weight: 500;
 }
-.ork-banner-retry:hover {
+.ork-form-error-retry:hover {
   background: var(--ork-bg-hover);
 }
 

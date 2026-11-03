@@ -22,8 +22,8 @@ const TYPES: { key: AgentType; label: string }[] = [
 ];
 
 export function CreateAgentModal({ existingNames, onCreate, onClose }: CreateAgentModalProps) {
-  const [cliKey, setCliKey] = useState("");
-  const [model, setModel] = useState(DEFAULT_MODEL);
+  const [cliKey, setCliKey] = useState(() => CLIS[0]?.key ?? "");
+  const [model, setModel] = useState(() => DEFAULT_MODEL);
   const [workspace, setWorkspace] = useState("~");
   const [name, setName] = useState("");
   const [icon, setIcon] = useState(0);
@@ -54,6 +54,9 @@ export function CreateAgentModal({ existingNames, onCreate, onClose }: CreateAge
 
   const cliError = touched.cli && !cliKey ? "Escolha um CLI." : null;
   const valid = !!name.trim() && !nameError && !!cliKey && !submitting;
+  // O erro de nome duplicado aparece AO DIGITAR (sem depender de blur/touch):
+  // aborta silenciosamente quando o submit está bloqueado e o usuário não vê o motivo.
+  const nameErrorLive = nameError ? touched.name || !!name.trim() : false;
 
   const suggestedName = useMemo(() => {
     const base = cliKey ? cliKey : "agente";
@@ -87,6 +90,9 @@ export function CreateAgentModal({ existingNames, onCreate, onClose }: CreateAge
         role,
       });
       await onCreate(def);
+      // Criação com sucesso: fecha o modal. Sem isso ele fica aberto com o nome já
+      // criado e o próximo Enter vira "Já existe..." (BUG reportado pelo usuário).
+      onClose();
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     } finally {
@@ -206,11 +212,16 @@ export function CreateAgentModal({ existingNames, onCreate, onClose }: CreateAge
                     type="button"
                     className="ork-btn ork-btn-secondary"
                     disabled
-                    title="Seletor de pasta nativo (marco futuro)"
+                    title="Desabilitado de propósito: o seletor de pasta nativo entra em middleware futuro; o caminho pode ser digitado no campo ao lado."
+                    aria-describedby="ork-workspace-help"
                   >
                     Procurar
                   </button>
                 </div>
+                <span className="ork-help" id="ork-workspace-help">
+                  O caminho do workspace aceita ~ e é digitado manualmente; "Procurar" (seletor de
+                  pasta nativo) entra em um marco futuro.
+                </span>
               </div>
             </div>
 
@@ -224,16 +235,16 @@ export function CreateAgentModal({ existingNames, onCreate, onClose }: CreateAge
                 <input
                   id="ork-name"
                   ref={nameRef}
-                  className={`ork-input${touched.name && nameError ? " is-error" : ""}`}
+                  className={`ork-input${nameErrorLive ? " is-error" : ""}`}
                   value={name}
                   placeholder={suggestedName}
-                  aria-invalid={touched.name && !!nameError}
+                  aria-invalid={nameErrorLive && !!nameError}
                   aria-describedby={nameError ? "ork-name-error" : undefined}
                   onChange={(e) => setName(e.target.value)}
                   onBlur={() => setTouched((t) => ({ ...t, name: true }))}
                   spellCheck={false}
                 />
-                {touched.name && nameError && (
+                {nameErrorLive && (
                   <span className="ork-error-text" id="ork-name-error" role="alert">
                     {nameError}
                   </span>
@@ -342,7 +353,7 @@ export function CreateAgentModal({ existingNames, onCreate, onClose }: CreateAge
             <button
               type="submit"
               className="ork-btn ork-btn-primary"
-              disabled={!valid}
+              disabled={submitting}
             >
               {submitting ? "Criando…" : "Criar agente"}
             </button>

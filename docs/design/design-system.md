@@ -144,7 +144,7 @@ Fontes **empacotadas localmente** (woff2, licença OFL): sem CDN; app deve funci
 | `--ork-fs-label` | 13 / 16 | 500 | nome da aba, rótulos de campo, botões |
 | `--ork-fs-meta` | 11 / 14 | 400 (mono) | CLI·modelo na aba, rodapé, tags |
 | `--ork-fs-caption` | 12 / 16 | 400 | ajuda e erro de campo |
-| `--ork-fs-terminal` | 13 / 1.25 (padrão; configurável 10–20) | 400 | xterm |
+| `--ork-fs-terminal` | 13 px, `lineHeight` do xterm = 1,25 (≈ 20 px por linha, medido; ver §9.10.3) (padrão; configurável 10–20) | 400 | xterm |
 
 Regras: pesos usados 400/500/600 apenas; números alinhados com `font-variant-numeric: tabular-nums`; sem caixa alta em texto longo; letter-spacing 0 (exceto +0,02em em `meta`).
 
@@ -193,6 +193,8 @@ Formato: anatomia · variantes · dimensões · estados · teclado/acessibilidad
 
 ### 4.1 Barra de abas de agentes
 
+> **Emenda de 2026-11-03 (ORKEST-VIS-ORG-D):** altura 48 px, tile 28 px, 4 px entre abas, largura flexível 168–220 px, × só em hover/foco, fechar por `Ctrl+Shift+W` e grupo Maestro com divisor — ver §9.10.2. Onde houver conflito, vale a §9.10.
+
 **Papel ARIA:** `role="tablist"` (orientação horizontal); cada aba `role="tab"` + `aria-selected`, `aria-controls` apontando ao painel do terminal; o painel é `role="tabpanel"`.
 
 **Aba — anatomia (esquerda→direita, 2 linhas):**
@@ -212,7 +214,7 @@ Formato: anatomia · variantes · dimensões · estados · teclado/acessibilidad
 | Marca de Maestro | losango ◆ 8 px em `text-secondary` após o nome; especialista não tem marca. `aria-label` inclui "Maestro" |
 | Linha 2 | `CLI · modelo` em mono 11 px; modelo longo é truncado no meio |
 | Glifo de estado | 14 px, ver 4.5; sempre presente (inclusive `idle`) |
-| Fechar `×` | 16 px; aparece em hover/aba ativa/foco; ver comportamento abaixo |
+| Fechar `×` | 16 px; aparece **só em hover e foco** (emenda 2026-11-03, §9.10.2); ver comportamento abaixo |
 | Trilho de estado | 2 px na base, cor do estado (ver 4.5); só em estados não-`idle`; `running` anima |
 | Largura | min 168, max 240, flexível; abaixo do mínimo ativa rolagem horizontal |
 | Altura | 44 |
@@ -235,7 +237,7 @@ Formato: anatomia · variantes · dimensões · estados · teclado/acessibilidad
 
 **Overflow:** setas ‹ › 28×44 nas extremidades quando há rolagem + fade de 16 px; botão "▾ Todas as abas" lista agentes com estado. A aba ativa é sempre rolada para a vista.
 
-**Atalhos sugeridos:** `Ctrl+Tab`/`Ctrl+Shift+Tab` cicla; `Ctrl+1…9` vai ao n-ésimo; `Ctrl+Shift+N` abre o modal; `Ctrl+W` fecha aba. *Conflitos com atalhos do xterm/CLIs devem ser verificados: quando o terminal tem foco, só atalhos com `Ctrl+Shift` ou `Alt` são capturados pelo app; `Ctrl+C`, `Ctrl+W`, `Ctrl+Tab` etc. pertencem ao terminal. Isto é uma proposta a validar com o Builder.*
+**Atalhos sugeridos:** `Ctrl+Tab`/`Ctrl+Shift+Tab` cicla; `Ctrl+1…9` vai ao n-ésimo; `Ctrl+Shift+N` abre o modal; `Ctrl+Shift+W` fecha aba (emenda 2026-11-03: `Ctrl+W` pertence ao terminal; §9.10.2). *Conflitos com atalhos do xterm/CLIs devem ser verificados: quando o terminal tem foco, só atalhos com `Ctrl+Shift` ou `Alt` são capturados pelo app; `Ctrl+C`, `Ctrl+W`, `Ctrl+Tab` etc. pertencem ao terminal. Isto é uma proposta a validar com o Builder.*
 
 ### 4.2 Botão "+" (criar/abrir agente)
 
@@ -316,7 +318,7 @@ Formato: anatomia · variantes · dimensões · estados · teclado/acessibilidad
 | Item | Especificação |
 |---|---|
 | Fundo / texto | `bg-terminal` `#0C0D0F`; foreground `#D7DAE0` (contraste alto, ≈15:1 — estimado a partir de `text-primary`; não calculado para este hex) |
-| Fonte | `fs-terminal` JetBrains Mono 13 px, altura de linha 1,25, ligaduras **desativadas por padrão** (fidelidade a saída de CLI) |
+| Fonte | `fs-terminal` JetBrains Mono 13 px, `lineHeight` 1,25 do xterm (≈ 20 px por linha; §9.10.3), ligaduras **desativadas por padrão** (fidelidade a saída de CLI) |
 | Cursor | bloco `accent` quando o terminal tem foco, bloco **vazado** (contorno) sem foco; pisca 530 ms apenas com foco; sem piscar se `prefers-reduced-motion` |
 | Seleção | `rgba(76,195,217,.28)` com texto preservado |
 | Padding | 8 / 12 px (terminal usa `fit`; recalcular colunas/linhas ao redimensionar e reportar à PTY) |
@@ -478,7 +480,7 @@ Capturas examinadas (todas em `/tmp/opencode/`): `orkest-m1.png`, `orkest-tab.pn
 
 **Tipografia da UI (12–14 px):** corpo e valores de controle 13/16 · rótulos 12/16 peso 500 `text-secondary` · hint/erro 12/16 · cabeçalho de seção 12/16 peso 600 `text-secondary` · **título do modal 14/20 peso 600** · botões 13/16 peso 500 · meta mono 11/14 (§3.4, inalterado). **Exceção deliberada:** título do estado vazio 16/24 peso 600 (não é cromo de ferramenta). Se a revisão visual achar a hierarquia do modal fraca com título 14, o título pode subir para 16/20 — decisão por captura.
 
-**Prioridade da área útil do terminal:** cromo fixo total = 40 + 24 = **64 px** de altura; sem sidebar. Em janela 941×508 (DPR 1) sobram ≈ 444 px para o terminal; com padding de 8 px e fonte 13/16,25 isso dá **≈ 26 linhas × ≈ 115 colunas** (estimativa; confirmar pelo `cols×rows` da barra de contexto).
+**Prioridade da área útil do terminal:** cromo fixo total = 40 + 24 = **64 px** de altura; sem sidebar. Em janela 941×508 (DPR 1) sobram ≈ 444 px para o terminal; com padding de 8 px e linhas de ≈ 20 px isso dá **21 linhas × 129 colunas** (medido na captura real; a estimativa anterior de ≈ 26 × ≈ 115 usava 16,25 px por linha e foi substituída — §9.10.3).
 
 ### 9.2 Modal de criação, abas e "+" (tabela substituída pela §9.7/ORKEST-CLOSE-VIS)
 
@@ -537,7 +539,7 @@ Capturas examinadas (todas em `/tmp/opencode/`): `orkest-m1.png`, `orkest-tab.pn
 |---|---|
 | **tmux dentro do terminal (F2)** | O terminal não deve exibir a barra de status do tmux. Sessões gerenciadas pelo Orkest devem ocultá-la **por sessão** (opção de status desligada nessa sessão), sem editar o `~/.tmux.conf` do usuário. O estado/nome já vivem na barra de abas e na barra de contexto. Se o status for mantido, ele precisa seguir os tokens (fundo `bg-chrome`, texto `text-tertiary`, sem realce azul) e nunca mostrar o UUID |
 | Fonte do terminal | Controle **independente** da UI: `--ork-fs-terminal` 13 px padrão, faixa 10–20 px, passo 1 px; atalhos `Ctrl+Shift+=` (aumenta), **`Ctrl+Alt+-`** (diminui — re-binding ORKEST-CLOSE-VIS: `Ctrl+Shift+-` é consumido pelo acelerador de zoom do WebKitGTK; o handler casa com `Alt+-` com ou sem Ctrl porque o pipeline de teclado XWayland entrega `Ctrl+Alt+-` como `Alt+-` puro), `Ctrl+Shift+0` (reset); o `Ctrl+=`/`Ctrl+-` puros continuam indo aos CLIs; valor persistido na configuração do app; ao mudar, refazer o `fit` e enviar `cols×rows` à PTY |
-| Legibilidade | corpo 13 px com altura de linha 1,25; contraste conforme §4.4 |
+| Legibilidade | corpo 13 px com `lineHeight` 1,25 do xterm (≈ 20 px por linha); contraste conforme §4.4 |
 | Ordem de prioridade | terminal > aba ativa > estado dos demais agentes > restante (§2, Direção A) |
 
 ### 9.5 Nota HiDPI / `devicePixelRatio` / zoom
@@ -596,3 +598,155 @@ Aceites fechados, cada um com captura-evidência correspondente em `docs/design/
 | Listbox (Modelo) | Listbox custom: pop, opções, seleção padrão | **PASS** | `fix2-listbox-modelo-aberto.png` |
 | Botão "Criar agente" c/ erro | desabilita quando campo em erro (duplicado/obrigatório/CLI); erro sempre visível ao digitar duplicado; modal não cria aba e não fecha no erro; fecha no sucesso | **PASS** | `fix2-nome-duplicado-erro-visivel.png`, `fix2-nome-duplicado-renome-fecha.png`, `closevis-botao-criar-desabilitado-erro-dup.png` |
 | Estados ≠ idle (running/blocked/failed/done) | — | **pendente para Marco 2** (validação de estados: exercício real no Marco 2; não implementado nesta ronda) | — |
+
+### 9.9 Variações dos estados de tarefa (pack ORKEST-VIS-M2)
+
+- **Artefatos:** `docs/design/preview-states.html` (fonte, tokens §3 + §9, quadros em janela real 941×508, DPR 1) e capturas em `docs/design/concepts/`: `states-tabs.png`, `states-running.png`, `states-blocked.png`, `states-failed.png`, `states-gray.png`.
+- **Status:** proposta; aguarda aprovação visual do usuário. Nenhuma decisão aprovada foi alterada.
+
+**Banner de estado (novo componente, complementa §4.4)**
+
+| Item | Especificação |
+|---|---|
+| Altura | `--ork-banner-h` **36px**, entre o terminal e a barra de contexto; empurra o terminal (via `fit`), **nunca o cobre** |
+| Fundo / borda | `color-mix` da cor do estado a 14% sobre `bg-terminal`; borda superior de 1px a 45% da cor do estado |
+| Conteúdo | glifo do estado (14px) · título 13/16 peso 500 + causa em `text-secondary` · chip opcional (agente·tarefa, mono 11/14) · ações à direita |
+| Ações | `--ork-btn-h-sm` **28px**, secundário (borda `border-control`), ícone 14px; no máximo 2 ações; Tab alcança os botões do banner depois do terminal |
+| Foco | o foco permanece no terminal; o banner é `role="status"` e **não** rouba o foco |
+
+**Variações cobertas** (cada uma tem quadro no pack)
+
+| ID | Estado | Variação | Banner | Observações | Implementado (ORKEST-M2-4) |
+|---|---|---|---|---|---|
+| R1 | running | aba ativa | não | arco e trilho animados; barra de contexto mostra estado + tempo | **Sim** — proxy: saída real do PTY nos últimos 2,5 s (eco de digitação <300 ms ignorado). `impl-R1-running-ativa.png` |
+| R2 | running | aba inativa com nova saída | não | glifo, trilho e ponto ciano de 6px | **Sim** — mesmo proxy + ponto "nova saída". `impl-R2-running-inativa-nova-saida.png` |
+| R3 | running | movimento reduzido | não | arco e segmento do trilho parados (V-10) | **Sim** — `prefers-reduced-motion`. `impl-R3-running-movimento-reduzido.png` |
+| B1 | blocked | aguarda resposta do usuário (texto único do banner: "aguardando a sua resposta", §9.10.4) | sim: "Ir ao prompt" | prompt visível no terminal | **Sim** — `question` do agente ao `orkest-ui` no broker (texto: "aguardando a sua resposta"). `impl-B1-blocked-usuario.png` |
+| B2 | blocked | aguarda outro agente | sim: chip `agente · tarefa` + "Ver <agente>" | cursor vazado (sem entrada esperada) | **Sim** — `question` a outro agente; chip + "Ver <agente>" (só se a aba existir). `impl-B2-blocked-agente.png` |
+| B3 | blocked | aba inativa | não | pulsação única de 360 ms + ponto de nova saída; trilho persiste | **Sim** — pulso único 360 ms + trilho persistente. `impl-B3-blocked-aba-inativa.png` |
+| F1 | failed | saída ≠ 0 | sim: "Ver log", "Reiniciar" | código de saída no texto | **Sim** — `session-exit` código ≠ 0; "Ver log" foca o terminal (o scrollback é o log), "Reiniciar" = ação explícita. `impl-F1-failed-exit1.png` |
+| F2 | failed | encerrado por sinal | sim: "Ver log", "Reiniciar" | causa em texto (ex.: SIGKILL) | **Sim** — campo `signal` novo em `session-exit`. `impl-F2-failed-sinal.png` |
+| F3 | failed | aba inativa | não | glifo e trilho vermelhos + ponto de nova saída | **Sim** — `impl-F3-failed-aba-inativa.png` |
+| F4 | sessão desconectada (§4.4) | recuperável | sim: "Reconectar" | tom de atenção, glifo de bloqueado, rótulo "Desconectada", barra de contexto com dimensões "—" | **Sim** — `recoverable` (tmux vivo após o cliente sair) + comando `reconnect_session`; falha mostra erro no banner, sem retry silencioso. `impl-F4-desconectada.png`, `impl-F4-reconectar-falhou-erro-visivel.png` |
+
+> **Emenda de 2026-11-03:** a largura de aba passa a ser flexível 168–220 px (§9.10.2); o trecho abaixo vale só como histórico.
+
+**Largura da aba (achado do pack):** com tab de 200px o modelo era truncado ("opus…") e a aba ativa mostra o × junto ao glifo. Passa a valer **largura de aba 220px** quando couber (4 agentes em 941px: 4×220 + 48 = 928px); com mais abas, encolher até o mínimo de 168px e depois rolar (§4.1). Nome completo e modelo permanecem no tooltip.
+
+**Implementação (ORKEST-M2-4) — lacunas de sinal do backend**
+- `blocked` só nasce de `question` no broker; **não há** detecção de prompt de aprovação do CLI (nada foi inventado). `delegate_task` não emite `message-received` e `mark_message` não emite evento: resolução do bloqueio vem de outra mensagem da mesma task.
+- `running` é proxy de atividade do PTY; o backend não expõe "executando" real.
+- Capturas `impl-*` feitas com o build de produção em Chromium (941×508, DPR 1) e mock da API Tauri; WebKitGTK real não coberto. V-30 medido: banner 36 px, botão 28 px, terminal reduzido (428→380 px); V-32 foco permanece no terminal; V-35 `impl-V03-escala-de-cinza-5-estados.png`.
+
+**Critérios de aceite adicionais**
+
+| ID | Critério | Como verificar |
+|---|---|---|
+| V-30 | Banner com 36px; botões do banner com 28px; terminal reduzido (não coberto) quando o banner aparece | `getBoundingClientRect` + captura |
+| V-31 | Cada variação R1–R3, B1–B3, F1–F4 existe no app com o visual do pack (aba + banner + barra de contexto) | captura por variação |
+| V-32 | Banner não rouba o foco do terminal; Tab chega aos botões do banner | roteiro manual |
+| V-33 | `blocked` e `failed` mantêm glifo e trilho até a ação do usuário; `running` anima apenas com movimento permitido | roteiro manual + `prefers-reduced-motion` |
+| V-34 | A barra de contexto mostra o rótulo textual coerente com o banner (Executando, Bloqueado, Falhou, Desconectada) | captura |
+| V-35 | Em escala de cinza os cinco estados continuam distinguíveis pela forma (confirmado no pack: `states-gray.png`) | captura em grayscale |
+
+### 9.10 Reorganização do topo e Configurações — H2 + S2 (ORKEST-VIS-ORG-D)
+
+- **Status:** **APROVADO pelo usuário em 2026-11-03**: direção **H2** (linha única de 48 px) + diálogo de configurações **S2** (coluna única, 560 px) + os ajustes explicitados em §9.10.2. H1 (duas camadas, custa 2 linhas), H3 (faixa do agente) e S3 (navegação lateral) ficam **arquivados como não escolhidos** (imagens mantidas em `docs/design/concepts/` só como referência).
+- **O que vale para implementar:** `docs/design/concepts/header-h2.png` (quadros H2-a/b/c), `docs/design/concepts/header-cfg.png` (S1 e **S2**) e a fonte `docs/design/preview-header.html`. O menu rápido da engrenagem (S1) faz parte do pacote H2/S2.
+- **Não altera:** banner de 36 px e botões de 28 px (§9.9), modal de criação (§9.2/§9.7), cores e tipografia base (§3).
+
+#### 9.10.1 Tokens (apenas os que valem para H2/S2)
+
+| Token | Valor | Uso | Relação com o vigente |
+|---|---|---|---|
+| `--ork-tabrow-h-lg` | **48px** | altura da linha única do cabeçalho (abas + ferramentas) | **substitui** `--ork-tabbar-h` (40px); `--ork-tabbar-h` vira alias obsoleto de `--ork-tabrow-h-lg` |
+| `--ork-icon-btn` | **32px** | botões de ícone do cabeçalho: marca, "+", avisos, engrenagem (glifo 16px, raio `r-md`) | novo |
+| `--ork-tab-gap` | **4px** | intervalo entre abas | novo |
+| `--ork-tile-tab` | **28px** (glifo 18px, raio `r-lg`) | tile de agente **na aba** | novo; `--ork-tile-sm` 24px continua em listas, popover e prévia do modal |
+| `--ork-toggle-w` / `--ork-toggle-h` / `--ork-toggle-knob` | **28px / 16px / 12px**, raio `--ork-r-xl` (8px) | interruptor; desligado = trilho `border-control` + bolinha `text-primary`; ligado = trilho `accent` + bolinha `text-on-accent`; desabilitado = 40% de opacidade | novo |
+| `--ork-stepper-h` | **28px** (botões 26px, valor mono 12/16 peso 500, largura mínima 34px) | ajuste numérico (fonte do terminal) | novo |
+| `--ork-setting-row-h` | **44px** (altura mínima; padding vertical 6px; divisória `border-subtle`) | linha de configuração: rótulo 13/16 peso 500 + descrição 12/16 `text-tertiary` à esquerda, controle à direita; gap 16px | novo |
+| `--ork-popover-w` | **288px** (padding 4px, `--ork-shadow-pop`) | menu rápido da engrenagem; itens 32px, linhas com controle 32px (controle 28px), legenda de grupo mono 11/14 `text-tertiary` | novo |
+
+Também fixados pelo pacote: divisor Maestro | especialistas de 1×24px (`--ork-border`, margem horizontal 8px); diálogo de configurações 560px, `max-height` 85%, cabeçalho 12/16px de padding com título 14/20, rodapé com dica à esquerda e botões de 32px; controle segmentado pequeno (Bloco/Barra) com 28px totais (borda 1 + padding 2 + segmentos de 22px).
+
+#### 9.10.2 Emenda explícita de 2026-11-03 a §4.1 e §9.9
+
+> **Emenda de 2026-11-03 (ORKEST-VIS-ORG-D), aprovada pelo usuário.** Substitui os trechos abaixo de §4.1 e §9.9; o restante dessas seções permanece.
+
+| # | Antes | Agora (H2) |
+|---|---|---|
+| 1 | Aba de 44 px, depois 40 px (§9.1); tile 24 px; abas encostadas | Linha de **48px**; tile de aba **28px**; **4px** entre abas; mais respiro interno (padding 0 8px 0 12px, gap interno 8px) |
+| 2 | §9.9: largura de aba **220px** quando couber | **Flexível 168–220px** (`flex: 1 1 0; min-width: 168px; max-width: 220px`): com 4 agentes em 941px cada aba mede ≈190px; com 1 agente, 220px; acima disso, rolagem (§4.1). Mesma regra de §9.9 para o mínimo |
+| 3 | §4.1: × visível em hover, **aba ativa** e foco | × visível **somente em hover e `focus-visible`** (também na aba ativa), para o modelo caber na linha 2 da aba |
+| 4 | §4.1: `Ctrl+W` fecha a aba | Fechar por **`Ctrl+Shift+W`** (e pelo ×). **Correção do meu próprio pacote:** o preview dizia `Ctrl+W`, que **pertence ao terminal** (apagar palavra no shell/readline) e, conforme a própria §4.1, só `Ctrl+Shift`/`Alt` são capturados pelo app. O usuário aprovou "fechar por Ctrl+W" com base nesse texto; peço confirmação desta correção ao Maestro/usuário. O Builder deve verificar no WebKitGTK que `Ctrl+Shift+W` chega ao app (o `Ctrl+Shift+-` foi consumido pelo zoom, §9.4) |
+| 5 | sem grupos | **Grupo Maestro** (abas `type = maestro`, sempre primeiro) separado por **divisor** dos especialistas; o divisor só aparece se houver os dois grupos |
+| 6 | sem ferramentas | **Ferramentas à direita** (`margin-left: auto`): avisos e engrenagem (`--ork-icon-btn`); marca (`a-mark`: três linhas e uma nota) como botão de ícone à esquerda |
+| 7 | — | **Avisos (sino):** o pacote não define painel de avisos. O Builder **só implementa o sino se o Maestro confirmar uma funcionalidade de avisos**; sem isso, o grupo de ferramentas fica só com a engrenagem. Se existir, o ponto de aviso tem 8px (`attention`, anel de 2px em `bg-chrome`) |
+
+**Estado atual do código (consulta de leitura):** a aba usa `flex: 0 1 220px; min-width: 168px; max-width: 240px` (`src/index.css`): já conforme ao item 2 salvo `max-width` (240 → 220), e `--ork-tabbar-h` está em 40px (→ 48px).
+
+#### 9.10.3 Reconciliação: terminal real ≈ 20px por linha × §3.4 (16,25px)
+
+> **Emenda de 2026-11-03.** A altura de linha do terminal em px **não é** 13 × 1,25 = 16,25.
+
+- **Fato (código + captura):** `TerminalPanel.tsx` usa `lineHeight: 1.25` do xterm.js e fonte de 13px. O xterm aplica o multiplicador à **altura natural da célula da fonte** (≈ 16px para JetBrains Mono a 13px), não ao tamanho da fonte; resultado **≈ 20px por linha**. Evidência: a captura real em 941×508 mostra linhas espaçadas de 20px e `129×21` na barra de contexto (428px úteis ÷ 20 ≈ 21 linhas).
+- **Decisão:** manter `lineHeight: 1.25` (é o valor aprovado) e **corrigir a spec**: onde §3.4, §4.4 e §9.4 dizem "13/16,25", ler "13px, `lineHeight` 1,25 do xterm (≈ 20px por linha, medido)". As estimativas de §9.1 ("≈ 26 linhas × ≈ 115 colunas") ficam substituídas por **≈ 21 linhas × ≈ 129 colunas**. Os previews `preview-a.html` e `preview-states.html` usam 16,25px e mostram cerca de 23% mais linhas que o app; `preview-header.html` já usa 20px.
+- **Orçamento em 941×508 com H2** (padding vertical do terminal 16px; linha 20px): sem banner = 508 − 48 − 24 − 16 = 420px → **21 linhas** (igual à captura de hoje); com banner de 36px = 384px → **19 linhas**. Coerente com a coluna "Implementado" de §9.9 (V-30: terminal reduzido pelo banner).
+- **Aceite V-39:** em 941×508 sem banner, `cols × rows` = 129 × 21; com banner, 129 × 19.
+
+#### 9.10.4 Texto do banner B1 (decisão única)
+
+- **Decisão:** B1 usa **"Bloqueado · aguardando a sua resposta"**. O texto do pacote ("aguardando a sua aprovação") fica **substituído**.
+- **Razão:** o bloqueio nasce de uma `question` do agente ao `orkest-ui` no broker (§9.9, coluna "Implementado"); não há detecção de prompt de aprovação do CLI. "Resposta" descreve o que o sistema sabe (honesto, Rams nº 6); "aprovação" afirmaria uma natureza da pergunta que ninguém verificou.
+- **Escopo do texto:** B2 permanece "Bloqueado · aguardando resposta" com chip `agente · tarefa`; F1/F2/F4 não mudam. A variação B1 passa a se chamar "aguarda resposta do usuário" em §9.9.
+
+#### 9.10.5 Configurações — diálogo S2 e menu rápido S1
+
+**Estrutura.** Diálogo `role="dialog"` aberto pela engrenagem ("Configurações…") ou por `Ctrl+,`: 560px (`min(560px, 92vw)`), `max-height` 85%, cabeçalho e rodapé fixos, corpo com rolagem, linhas de `--ork-setting-row-h`. **As alterações valem na hora**, sem botão Salvar. Rodapé: dica "As alterações são salvas na hora." · **Restaurar padrões** (secundário 32px; primeiro clique troca o rótulo para "Confirmar restauração" por 4 s) · **Fechar** (primário 32px). "Restaurar padrões" apaga **só preferências**, nunca agentes ou sessões. `Esc` fecha e devolve o foco à engrenagem.
+
+**Itens, padrões e suporte atual** (consulta de leitura ao código em 2026-11-03)
+
+| Seção | Item | Controle | Padrão | Suporte hoje |
+|---|---|---|---|---|
+| Aparência e terminal | Tema | listbox desabilitado "Escuro" | Escuro | só o tema escuro existe; **não prometer claro** |
+| | Fonte do terminal | stepper 10–20 px | 13 | **pronto** (`localStorage` `orkest.termFontSize`; atalhos §9.4) — falta só o controle visual |
+| | Cursor | segmentado Bloco / Barra | Bloco | frontend (opção do xterm) |
+| Agentes | CLI padrão | listbox (CLIs detectados) | primeiro detectado | frontend (`detect_clis` existe) |
+| | Modelo padrão | listbox por CLI | Padrão do CLI | frontend |
+| | Workspace padrão | campo mono | `~` | frontend |
+| | Abrir o CLI ao criar o agente | interruptor | ligado | hoje **fixo** (`write_input` após attach): tornar condicional (frontend) |
+| | Restaurar agentes ao abrir o app | interruptor | ligado | `reconnect_session` existe; **backend confirma** se a restauração automática existe; sem confirmação, o item aparece **desabilitado com tag "EM BREVE"** |
+| | Confirmar ao fechar agente em execução | interruptor | ligado | frontend; decisão §7.2 ainda aberta → padrão ligado até decidir |
+| Avisos | Aviso de desktop ao bloquear/falhar | interruptor **desabilitado**, tag "EM BREVE" | desligado | **nenhum plugin de notificação** no projeto; não prometer |
+| | Som | interruptor desabilitado | desligado | idem |
+| Sistema | Diagnóstico | texto + botão "Copiar" | — | `devicePixelRatio`, tamanho da janela e versão do app (frontend); CLIs detectados via `detect_clis`; versão do tmux **só quando existir comando** (omitir antes) |
+| | Versão | texto | — | — |
+
+**Menu rápido (S1, engrenagem):** "Configurações…" (`Ctrl+,`) · Fonte do terminal (stepper) · "Abrir o CLI ao criar o agente" (interruptor) · "Avisar quando bloquear ou falhar" (**desabilitado "EM BREVE"** enquanto não houver plugin; o quadro do pacote o mostra ligado como conceito) · Atalhos de teclado (`Ctrl+/`) · Diagnóstico · "Sobre o Orkest · v0.1.0". Largura 288px, itens 32px.
+
+**Armazenamento (recomendação, decisão do Builder/Maestro).** Não há tabela de configurações no SQLite (só `messages`). Para a V1: `localStorage` com um objeto versionado `orkest.settings` (`{ v: 1, … }`), lendo `orkest.termFontSize` como migração. Mover para o backend só se alguma opção precisar valer fora da janela (ex.: restauração automática).
+
+**Acessibilidade.** Interruptor com `role="switch"` e `aria-checked`; stepper com botões rotulados ("Diminuir/Aumentar fonte do terminal"); cada linha associa rótulo e controle; foco preso no diálogo; foco inicial no primeiro controle ativo.
+
+#### 9.10.6 Critérios de aceite adicionais (continuam V-01…V-35)
+
+| ID | Critério | Como verificar |
+|---|---|---|
+| V-36 | Linha do cabeçalho com 48px; tile de aba 28px; 4px entre abas; divisor 1×24px entre grupo Maestro e especialistas; ferramentas alinhadas à direita | `getBoundingClientRect` + captura em 941×508 |
+| V-37 | Largura de aba flexível 168–220px: ≈190px com 4 abas em 941px; 220px com 1 aba; 168px com muitas abas, com rolagem | medição com 1, 4 e 8 abas |
+| V-38 | × oculto por padrão, visível em hover e `focus-visible` (também na aba ativa); `Ctrl+Shift+W` fecha a aba; `Ctrl+W` continua indo ao terminal (apagar palavra funciona) | roteiro manual |
+| V-39 | Em 941×508: terminal 129×21 sem banner e 129×19 com banner de 36px | barra de contexto + captura |
+| V-40 | Botões de ícone do cabeçalho 32×32; engrenagem abre popover de 288px; `Esc` fecha e devolve o foco | inspeção + teclado |
+| V-41 | Itens do popover 32px, controles 28px; interruptor 28×16 com bolinha de 12px | `getBoundingClientRect` |
+| V-42 | Diálogo de configurações: 560px, ≤ 85% da altura, cabeçalho e rodapé sempre visíveis, corpo rola, linhas ≥ 44px; `Ctrl+,` abre | captura em 941×508 |
+| V-43 | O stepper de fonte e os atalhos de §9.4 permanecem sincronizados e persistem | roteiro manual |
+| V-44 | Itens sem suporte (aviso de desktop, som, restauração sem backend) aparecem **desabilitados com tag "EM BREVE"**; nenhum controle finge funcionar | captura + roteiro |
+| V-45 | Texto do banner B1 = "aguardando a sua resposta" | captura de B1 |
+| V-46 | "Restaurar padrões" apaga só preferências (agentes e sessões permanecem) | roteiro manual |
+
+#### 9.10.7 Pendências
+
+- **Do Builder (código, `src/`):** tokens da §9.10.1; cabeçalho H2; aba flexível e × em hover; `Ctrl+Shift+W`; popover e diálogo S2; interruptores/stepper; texto B1; confirmar `Ctrl+Shift+W` no WebKitGTK.
+- **Do backend/Maestro:** se existe restauração automática de agentes (item "Restaurar agentes"); se haverá plugin de notificação e, então, painel de avisos (sino); comando para a versão do tmux.
+- **Do usuário/Maestro:** confirmar a correção `Ctrl+W` → `Ctrl+Shift+W` (§9.10.2, item 4).

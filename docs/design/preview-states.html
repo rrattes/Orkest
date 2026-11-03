@@ -1,0 +1,330 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Orkest — Pack de conceitos: estados de tarefa</title>
+<style>
+/* =====================================================================
+   Orkest · Direção A "Partitura" · pack de conceitos dos estados de tarefa
+   ORKEST-VIS-M2. Tokens = §3 + §9 de docs/design/design-system.md.
+   Hex só dentro de :root. Quadros em janela real 941×508 (DPR 1).
+   ===================================================================== */
+:root{
+  --ork-bg-canvas:#0F1012; --ork-bg-chrome:#151619; --ork-bg-surface:#1B1D21; --ork-bg-raised:#222529;
+  --ork-bg-hover:#2A2D32; --ork-bg-terminal:#0C0D0F;
+  --ork-border-subtle:#25282D; --ork-border:#32363C; --ork-border-control:#70767F;
+  --ork-text-primary:#E6E8EB; --ork-text-secondary:#A3A9B2; --ork-text-tertiary:#8A919B; --ork-text-on-accent:#07181C;
+  --ork-accent:#4CC3D9; --ork-accent-hover:#6FD3E5; --ork-accent-subtle:rgba(76,195,217,.14);
+  --ork-success:#5DC47E; --ork-attention:#E8B04A; --ork-error:#EE6B63; --ork-neutral:#8A919B;
+  --ork-id-blue:#7AA7F0; --ork-id-lilac:#B38DEB; --ork-id-pink:#E58BB0; --ork-id-orange:#F0A06A;
+  --ork-id-sand:#D9C36A; --ork-id-sage:#8CCB8C; --ork-id-aqua:#6FCFC4; --ork-id-stone:#B5B9C2;
+  --ork-term-fg:#D7DAE0; --ork-term-selection:rgba(76,195,217,.28);
+  --ork-ansi-bright-black:#7A808A; --ork-ansi-red:#EE6B63; --ork-ansi-green:#5DC47E; --ork-ansi-yellow:#E8B04A;
+  --ork-ansi-blue:#6C9EF0; --ork-ansi-magenta:#C08BE8; --ork-ansi-cyan:#4CC3D9; --ork-ansi-white:#C9CED6;
+  --ork-font-ui:"IBM Plex Sans", system-ui, sans-serif;
+  --ork-font-mono:"JetBrains Mono", ui-monospace, "DejaVu Sans Mono", monospace;
+  --ork-space-2:2px; --ork-space-4:4px; --ork-space-6:6px; --ork-space-8:8px; --ork-space-12:12px;
+  --ork-space-16:16px; --ork-space-20:20px; --ork-space-24:24px; --ork-space-32:32px;
+  --ork-r-sm:2px; --ork-r-md:4px; --ork-r-lg:6px; --ork-r-xl:8px;
+  --ork-dur-fast:120ms; --ork-dur-loop:1600ms; --ork-ease-out:cubic-bezier(.2,.8,.2,1);
+  /* §9 */
+  --ork-tabbar-h:40px; --ork-ctxbar-h:24px; --ork-banner-h:36px; --ork-btn-h-sm:28px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:var(--ork-bg-canvas);color:var(--ork-text-primary);font:400 13px/20px var(--ork-font-ui);-webkit-font-smoothing:antialiased}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+:focus-visible{outline:2px solid var(--ork-accent);outline-offset:2px}
+svg{display:block;flex:none}
+.ico{fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+
+/* moldura do pack */
+.pv-head{display:flex;align-items:center;gap:var(--ork-space-16);flex-wrap:wrap;padding:var(--ork-space-12) var(--ork-space-24);
+  background:var(--ork-bg-chrome);border-bottom:1px solid var(--ork-border-subtle)}
+.pv-head h1{font-size:14px;line-height:20px;font-weight:600}
+.pv-head .sub{color:var(--ork-text-tertiary);font-size:12px;line-height:16px}
+.pv-nav{display:flex;gap:var(--ork-space-4);margin-left:auto;flex-wrap:wrap}
+.pv-nav button{height:32px;padding:0 var(--ork-space-12);border-radius:var(--ork-r-md);color:var(--ork-text-secondary);font-weight:500}
+.pv-nav button:hover{background:var(--ork-bg-hover);color:var(--ork-text-primary)}
+.pv-nav button[aria-pressed="true"]{background:var(--ork-accent-subtle);color:var(--ork-accent)}
+main{padding:var(--ork-space-24);max-width:1040px}
+.view{display:none}.view.on{display:block}
+.intro{color:var(--ork-text-secondary);max-width:760px;margin-bottom:var(--ork-space-24)}
+.cap{margin:var(--ork-space-32) 0 var(--ork-space-8);display:flex;flex-direction:column;gap:var(--ork-space-2)}
+.cap b{font-size:14px;line-height:20px;font-weight:600;display:flex;align-items:center;gap:var(--ork-space-8)}
+.cap b i{font:500 11px/14px var(--ork-font-mono);color:var(--ork-accent);background:var(--ork-accent-subtle);border-radius:var(--ork-r-md);padding:2px 6px;font-style:normal}
+.cap span{color:var(--ork-text-tertiary);font-size:12px;line-height:16px}
+.notes{margin-top:var(--ork-space-24);color:var(--ork-text-tertiary);font-size:12px;line-height:16px;max-width:760px}
+.notes li{margin-left:16px;margin-bottom:4px}
+
+/* janela 941×508 */
+.win{position:relative;width:941px;height:508px;display:flex;flex-direction:column;background:var(--ork-bg-canvas);
+  border:1px solid var(--ork-border);border-radius:var(--ork-r-xl);overflow:hidden}
+
+/* barra de abas · 40px */
+.tabbar{position:relative;height:var(--ork-tabbar-h);flex:none;display:flex;align-items:stretch;background:var(--ork-bg-chrome);padding-left:var(--ork-space-8)}
+.tabbar::after{content:"";position:absolute;left:0;right:0;bottom:0;height:1px;background:var(--ork-accent);z-index:1}
+.tab{position:relative;width:220px;height:var(--ork-tabbar-h);display:grid;grid-template-columns:24px 1fr auto auto;column-gap:var(--ork-space-8);
+  align-items:center;padding:0 var(--ork-space-8) 0 var(--ork-space-12);text-align:left;color:var(--ork-text-secondary)}
+.tab:hover,.tab.hv{background:var(--ork-bg-hover);color:var(--ork-text-primary)}
+.tab .tile{grid-row:1 / span 2;align-self:center}
+.tab .nm{grid-column:2;grid-row:1;display:flex;align-items:center;gap:var(--ork-space-6);font-size:13px;line-height:16px;font-weight:500;color:inherit;min-width:0;align-self:end}
+.tab .nm span.t{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tab .mt{grid-column:2;grid-row:2;font:400 11px/14px var(--ork-font-mono);letter-spacing:.02em;color:var(--ork-text-tertiary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;align-self:start}
+.tab .st{grid-column:3;grid-row:1 / span 2;display:flex;align-items:center;gap:var(--ork-space-6)}
+.tab .x{grid-column:4;grid-row:1 / span 2;width:16px;height:16px;display:grid;place-items:center;border-radius:var(--ork-r-sm);color:var(--ork-text-tertiary);opacity:0}
+.tab:hover .x,.tab.sel .x,.tab.hv .x{opacity:1}
+.tab .rail{position:absolute;left:0;right:0;bottom:0;height:2px;overflow:hidden;z-index:3}
+.tab .rail i{display:block;height:100%;width:100%}
+.tab .rail.run i{width:24px;background:var(--ork-accent);animation:rail var(--ork-dur-loop) linear infinite}
+.static .tab .rail.run i{animation:none;transform:translateX(88px)}
+.static .g-run{animation:none}
+@keyframes rail{from{transform:translateX(-24px)}to{transform:translateX(220px)}}
+.tab.sel{background:var(--ork-bg-terminal);color:var(--ork-text-primary);z-index:2;border-radius:var(--ork-r-md) var(--ork-r-md) 0 0}
+.tab.sel::before{content:"";position:absolute;left:0;right:0;top:0;height:2px;background:var(--ork-accent);border-radius:var(--ork-r-md) var(--ork-r-md) 0 0}
+.mk{width:8px;height:8px;color:var(--ork-text-secondary)}
+.unseen{width:6px;height:6px;border-radius:50%;background:var(--ork-accent)}
+.tile{width:24px;height:24px;border-radius:var(--ork-r-lg);display:grid;place-items:center;color:var(--c);background:color-mix(in srgb, var(--c) 16%, transparent)}
+.tile svg{width:16px;height:16px}
+.plus-wrap{align-self:center;margin-left:var(--ork-space-8)}
+.plus{width:32px;height:32px;display:grid;place-items:center;border-radius:var(--ork-r-md);color:var(--ork-text-secondary)}
+.plus svg{width:16px;height:16px}
+
+/* glifos de estado */
+.g{width:14px;height:14px;fill:none;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+.g-idle{stroke:var(--ork-neutral)}
+.g-run{stroke:var(--ork-accent);animation:spin 900ms linear infinite;transform-origin:50% 50%}
+.g-done circle{fill:var(--ork-success);stroke:none}.g-done path{stroke:var(--ork-bg-canvas)}
+.g-block{stroke:var(--ork-attention)}
+.g-fail{stroke:var(--ork-error)}
+@keyframes spin{to{transform:rotate(360deg)}}
+.pulse1{display:inline-flex;animation:pulse1 360ms var(--ork-ease-out) 1}
+@keyframes pulse1{0%{transform:scale(1)}50%{transform:scale(1.25)}100%{transform:scale(1)}}
+
+/* terminal */
+.term{position:relative;flex:1;min-height:0;background:var(--ork-bg-terminal);padding:var(--ork-space-8) var(--ork-space-12);overflow:hidden}
+.term pre{font:400 13px/16.25px var(--ork-font-mono);color:var(--ork-term-fg);white-space:pre;font-variant-ligatures:none}
+.a-dim{color:var(--ork-ansi-bright-black)}.a-g{color:var(--ork-ansi-green)}.a-y{color:var(--ork-ansi-yellow)}.a-c{color:var(--ork-ansi-cyan)}
+.a-b{color:var(--ork-ansi-blue)}.a-r{color:var(--ork-ansi-red)}.a-w{color:var(--ork-ansi-white)}
+.sel-t{background:var(--ork-term-selection)}
+.cur{display:inline-block;width:.6em;height:1.15em;vertical-align:-.2em;background:var(--ork-accent)}
+.cur.hollow{background:transparent;outline:1px solid var(--ork-accent);outline-offset:-1px}
+.sb{position:absolute;top:8px;right:2px;bottom:8px;width:10px}
+.sb i{position:absolute;right:0;top:0;width:10px;height:38%;border-radius:var(--ork-r-sm);background:var(--ork-border-control);opacity:.6}
+
+/* banner de estado (36px) */
+.banner{flex:none;height:var(--ork-banner-h);display:flex;align-items:center;gap:var(--ork-space-12);padding:0 var(--ork-space-12);
+  background:color-mix(in srgb, var(--c) 14%, var(--ork-bg-terminal));border-top:1px solid color-mix(in srgb, var(--c) 45%, transparent)}
+.banner .tx{font-weight:500;color:var(--ork-text-primary);white-space:nowrap}
+.banner .tx em{font-style:normal;font-weight:400;color:var(--ork-text-secondary)}
+.banner .sp{flex:1}
+.chip{display:inline-flex;align-items:center;gap:var(--ork-space-6);height:20px;padding:0 var(--ork-space-6);border-radius:var(--ork-r-md);
+  background:var(--ork-bg-raised);font:400 11px/14px var(--ork-font-mono);color:var(--ork-text-secondary);letter-spacing:.02em}
+.chip .tile{width:14px;height:14px;border-radius:var(--ork-r-sm)}.chip .tile svg{width:10px;height:10px}
+.btn{height:var(--ork-btn-h-sm);padding:0 var(--ork-space-12);border-radius:var(--ork-r-md);font-weight:500;font-size:13px;line-height:16px;display:inline-flex;align-items:center;gap:var(--ork-space-6)}
+.btn.secondary{border:1px solid var(--ork-border-control);color:var(--ork-text-primary)}
+.btn.secondary:hover{background:var(--ork-bg-hover)}
+.btn svg{width:14px;height:14px}
+
+/* barra de contexto · 24px */
+.ctx{position:relative;height:var(--ork-ctxbar-h);flex:none;display:flex;align-items:center;gap:var(--ork-space-16);padding:0 var(--ork-space-12);
+  background:var(--ork-bg-chrome);border-top:1px solid var(--ork-border-subtle);font:400 11px/14px var(--ork-font-mono);letter-spacing:.02em;color:var(--ork-text-tertiary)}
+.ctx .sp{flex:1}.ctx .mid{position:absolute;left:50%;transform:translateX(-50%)}
+.ctx .stt{display:inline-flex;align-items:center;gap:var(--ork-space-6);color:var(--c)}
+
+/* matriz de abas */
+.matrix{display:grid;grid-template-columns:120px repeat(4,224px);gap:var(--ork-space-12) var(--ork-space-8);align-items:start}
+.matrix .h{font:500 11px/14px var(--ork-font-mono);color:var(--ork-text-tertiary);letter-spacing:.02em;padding-bottom:var(--ork-space-4)}
+.matrix .rl{display:flex;flex-direction:column;justify-content:center;height:56px;font-weight:600}
+.matrix .rl span{font:400 11px/14px var(--ork-font-mono);color:var(--ork-text-tertiary)}
+.cell{width:224px;background:var(--ork-bg-chrome);border-radius:var(--ork-r-lg);overflow:hidden}
+.cell .tabbar::after{background:var(--ork-border-subtle)}
+.cell.act .tabbar::after{background:var(--ork-accent)}
+.cell .below{height:16px;background:var(--ork-bg-chrome)}
+.cell.act .below{background:var(--ork-bg-terminal)}
+.cell .tab{width:224px}
+.gray{filter:grayscale(1)}
+
+@media (prefers-reduced-motion:reduce){.g-run{animation:none}.tab .rail.run i{animation:none;transform:translateX(88px)}}
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="a-staff" viewBox="0 0 16 16"><path d="M2 4h12M2 6h12M2 8h12M2 10h12M2 12h12" class="ico" stroke-width="1.25"/></symbol>
+  <symbol id="a-dotring" viewBox="0 0 16 16"><circle cx="8" cy="8" r="5" class="ico"/><circle cx="8" cy="8" r="1.2" fill="currentColor"/></symbol>
+  <symbol id="a-hexagon" viewBox="0 0 16 16"><path d="M8 2 13 5v6L8 14 3 11V5Z" class="ico"/></symbol>
+  <symbol id="a-lines" viewBox="0 0 16 16"><path d="M4 3v10M8 3v10M12 3v10" class="ico"/></symbol>
+  <symbol id="a-orbit" viewBox="0 0 16 16"><ellipse cx="8" cy="8" rx="6" ry="2.5" transform="rotate(-30 8 8)" class="ico"/><circle cx="8" cy="8" r="1.4" fill="currentColor"/></symbol>
+  <symbol id="u-plus" viewBox="0 0 16 16"><path d="M8 3v10M3 8h10" class="ico"/></symbol>
+  <symbol id="u-x" viewBox="0 0 16 16"><path d="M4 4l8 8M12 4l-8 8" class="ico"/></symbol>
+  <symbol id="u-refresh" viewBox="0 0 16 16"><path d="M13 8a5 5 0 1 1-1.5-3.5M13 3v3h-3" class="ico"/></symbol>
+  <symbol id="u-log" viewBox="0 0 16 16"><path d="M3 4h10M3 8h10M3 12h6" class="ico"/></symbol>
+  <symbol id="u-prompt" viewBox="0 0 16 16"><path d="M3 4l4 4-4 4M9 12h4" class="ico"/></symbol>
+  <symbol id="u-link" viewBox="0 0 16 16"><path d="M6.5 9.5l3-3M5 8l-1.2 1.2a2.5 2.5 0 0 0 3.5 3.5L8.5 11.5M11 8l1.2-1.2a2.5 2.5 0 0 0-3.5-3.5L7.5 4.5" class="ico"/></symbol>
+</svg>
+
+<header class="pv-head">
+  <div><h1>Orkest — Pack de conceitos · estados de tarefa</h1>
+    <div class="sub">ORKEST-VIS-M2 · Direção A "Partitura" · tokens §3 + §9 · quadros em janela real 941×508, DPR 1 · dados fictícios</div></div>
+  <nav class="pv-nav" aria-label="Seções do pack">
+    <button data-view="tabs" aria-pressed="true">Abas × estados</button>
+    <button data-view="running" aria-pressed="false">Running</button>
+    <button data-view="blocked" aria-pressed="false">Blocked</button>
+    <button data-view="failed" aria-pressed="false">Failed</button>
+    <button data-view="gray" aria-pressed="false">Escala de cinza</button>
+  </nav>
+</header>
+
+<main id="root"></main>
+
+<script>
+(function(){
+  /* ---------- glifos ---------- */
+  var G={
+    idle:'<svg class="g g-idle" viewBox="0 0 14 14"><circle cx="7" cy="7" r="5.25"/></svg>',
+    running:'<svg class="g g-run" viewBox="0 0 14 14"><path d="M7 1.75A5.25 5.25 0 1 1 1.75 7"/></svg>',
+    done:'<svg class="g g-done" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6"/><path d="M4.25 7.25 6.25 9.25 9.75 5"/></svg>',
+    blocked:'<svg class="g g-block" viewBox="0 0 14 14"><path d="M7 1.75 12.75 11.75H1.25Z"/><path d="M7 5.5v2.75M7 10.1v.01"/></svg>',
+    failed:'<svg class="g g-fail" viewBox="0 0 14 14"><rect x="1.75" y="1.75" width="10.5" height="10.5" rx="2.5"/><path d="M5 5l4 4M9 5l-4 4"/></svg>'
+  };
+  var COL={idle:'--ork-neutral',running:'--ork-accent',done:'--ork-success',blocked:'--ork-attention',failed:'--ork-error'};
+  var LBL={idle:'Ocioso',running:'Executando',done:'Concluído',blocked:'Bloqueado',failed:'Falhou'};
+  var MK='<svg class="mk" viewBox="0 0 8 8"><path d="M4 .5 7.5 4 4 7.5.5 4Z" fill="currentColor"/></svg>';
+  var X='<span class="x"><svg width="12" height="12"><use href="#u-x"/></svg></span>';
+  function rail(s){
+    if(s==='running')return '<span class="rail run"><i></i></span>';
+    if(s==='idle')return '';
+    return '<span class="rail"><i style="background:var('+COL[s]+')"></i></span>';
+  }
+  function tab(t){
+    return '<button class="tab'+(t.sel?' sel':'')+(t.hv?' hv':'')+'" role="tab" aria-selected="'+(!!t.sel)+'" title="'+LBL[t.s]+'">'+
+      '<span class="tile" style="--c:var('+t.c+')"><svg><use href="#'+t.ic+'"/></svg></span>'+
+      '<span class="nm"><span class="t">'+t.n+'</span>'+(t.m?MK:'')+'</span>'+
+      '<span class="mt">'+t.meta+'</span>'+
+      '<span class="st">'+(t.unseen?'<span class="unseen" title="Nova saída"></span>':'')+'<span class="'+(t.pulse?'pulse1':'')+'">'+G[t.s]+'</span></span>'+
+      X+rail(t.s)+'</button>';
+  }
+  function tabbar(tabs){
+    return '<div class="tabbar" role="tablist">'+tabs.map(tab).join('')+
+      '<div class="plus-wrap"><button class="plus" aria-label="Criar ou abrir agente"><svg><use href="#u-plus"/></svg></button></div></div>';
+  }
+  function banner(b){
+    if(!b)return '';
+    var chip=b.chip?'<span class="chip"><span class="tile" style="--c:var('+b.chip[0]+')"><svg><use href="#'+b.chip[1]+'"/></svg></span>'+b.chip[2]+'</span>':'';
+    return '<div class="banner" role="status" style="--c:var('+COL[b.s]+')">'+G[b.s]+
+      '<span class="tx">'+b.tx+(b.sub?' <em>· '+b.sub+'</em>':'')+'</span>'+chip+'<span class="sp"></span>'+
+      (b.btns||[]).map(function(x){return '<button class="btn '+x[0]+'"><svg><use href="#'+x[1]+'"/></svg>'+x[2]+'</button>'}).join('')+'</div>';
+  }
+  function ctx(c){
+    return '<div class="ctx"><span>'+c.ws+'</span><span class="mid">'+c.sess+'</span><span class="sp"></span>'+
+      '<span class="stt" style="--c:var('+COL[c.s]+')">'+G[c.s]+(c.label||LBL[c.s])+(c.extra?' · '+c.extra:'')+'</span><span>· '+c.size+'</span></div>';
+  }
+  function win(o){
+    return '<div class="win'+(o.static?' static':'')+'">'+tabbar(o.tabs)+
+      '<div class="term" role="region" aria-label="Terminal"><pre>'+o.lines.join('\n')+'</pre><div class="sb" aria-hidden="true"><i></i></div></div>'+
+      banner(o.banner)+ctx(o.ctx)+'</div>';
+  }
+  function cap(id,title,desc){return '<div class="cap"><b><i>'+id+'</i>'+title+'</b><span>'+desc+'</span></div>';}
+
+  function T(n,meta,s,ic,c,o){o=o||{};return {n:n,meta:meta,s:s,ic:ic,c:c,m:o.m,sel:o.sel,unseen:o.unseen,hv:o.hv,pulse:o.pulse};}
+  var P='<span class="a-g">rrattes</span><span class="a-dim">@</span><span class="a-b">orkest</span> <span class="a-c">~/Work/orkest</span> <span class="a-dim">$</span> ';
+  var CTX={ws:'~/Work/orkest',sess:'sessão tmux orkest-a1f3',size:'117×26'};
+  var RULE='<span class="a-dim">────────────────────────────────────────────────────────────</span>';
+  function set4(a,b,c,d){return [a,b,c,d];}
+  var AT=function(s,o){return T('atlas','claude · opus 5.5',s,'a-staff','--ork-id-blue',Object.assign({m:1},o||{}));};
+  var RV=function(s,o){return T('revisor','codex · gpt-5',s,'a-dotring','--ork-id-lilac',o);};
+  var BD=function(s,o){return T('build','opencode · deepseek v4',s,'a-hexagon','--ork-id-orange',o);};
+  var AP=function(s,o){return T('api','claude · sonnet 5.5',s,'a-orbit','--ork-id-aqua',o);};
+
+  /* ======== RUNNING ======== */
+  var R1=win({tabs:[AT('running',{sel:1}),RV('done'),BD('idle'),AP('idle')],
+    lines:[P+'claude --model opus',RULE,'<span class="a-c">●</span> Lendo <span class="a-w">docs/design/design-system.md</span>','<span class="a-c">●</span> Lendo <span class="a-w">src/App.tsx</span>',
+      '  <span class="a-dim">└ 2 arquivos · 612 linhas</span>','','<span class="a-g">✓</span> Tokens da §3 mapeados para <span class="a-w">theme.extend</span>',
+      '<span class="a-c">●</span> Escrevendo <span class="a-w">src/styles/tokens.css</span> <span class="a-dim">(+148 −0)</span>','','<span class="a-dim">&gt;</span> <span class="cur"></span>'],
+    ctx:{ws:CTX.ws,sess:CTX.sess,s:'running',extra:'02:14',size:CTX.size}});
+  var R2=win({tabs:[AT('idle',{sel:1}),RV('running',{unseen:1}),BD('idle'),AP('idle')],
+    lines:[P+'claude --model opus',RULE,'<span class="a-g">✓</span> Revisão de tokens concluída.','','<span class="a-dim">&gt;</span> <span class="cur"></span>'],
+    ctx:{ws:CTX.ws,sess:CTX.sess,s:'idle',size:CTX.size}});
+  var R3=win({static:1,tabs:[AT('running',{sel:1}),RV('done'),BD('idle'),AP('idle')],
+    lines:[P+'claude --model opus',RULE,'<span class="a-c">●</span> Escrevendo <span class="a-w">src/styles/tokens.css</span> <span class="a-dim">(+148 −0)</span>','','<span class="a-dim">&gt;</span> <span class="cur"></span>'],
+    ctx:{ws:CTX.ws,sess:CTX.sess,s:'running',extra:'02:14',size:CTX.size}});
+
+  /* ======== BLOCKED ======== */
+  var B1=win({tabs:[AT('blocked',{sel:1}),RV('done'),BD('idle'),AP('idle')],
+    lines:['<span class="a-c">●</span> Escrevendo <span class="a-w">src/styles/tokens.css</span> <span class="a-dim">(+148 −0)</span>','','<span class="a-y">▲</span> Aguardando aprovação do usuário para o comando abaixo:',
+      '    <span class="sel-t">npm run tauri dev -- --no-watch</span>','  <span class="a-dim">[y] aprovar   [n] negar   [e] editar</span>','','<span class="a-dim">&gt;</span> <span class="cur"></span>'],
+    banner:{s:'blocked',tx:'Bloqueado',sub:'aguardando a sua resposta',btns:[['secondary','u-prompt','Ir ao prompt']]},
+    ctx:{ws:CTX.ws,sess:CTX.sess,s:'blocked',extra:'00:48',size:CTX.size}});
+  var B2=win({tabs:[AT('blocked',{sel:1}),RV('running'),BD('idle'),AP('idle')],
+    lines:['<span class="a-c">●</span> Delegando revisão dos tokens ao <span class="a-w">revisor</span>','  <span class="a-dim">└ tarefa t-3f2a enviada</span>','','<span class="a-y">▲</span> Aguardando resposta para continuar.','','<span class="a-dim">&gt;</span> <span class="cur hollow"></span>'],
+    banner:{s:'blocked',tx:'Bloqueado',sub:'aguardando resposta',chip:['--ork-id-lilac','a-dotring','revisor · t-3f2a'],btns:[['secondary','u-link','Ver revisor']]},
+    ctx:{ws:CTX.ws,sess:CTX.sess,s:'blocked',extra:'03:02',size:CTX.size}});
+  var B3=win({tabs:[AT('idle',{sel:1}),RV('done'),BD('blocked',{unseen:1,pulse:1}),AP('idle')],
+    lines:[P+'claude --model opus',RULE,'<span class="a-g">✓</span> Pronto para a próxima tarefa.','','<span class="a-dim">&gt;</span> <span class="cur"></span>'],
+    ctx:{ws:CTX.ws,sess:CTX.sess,s:'idle',size:CTX.size}});
+
+  /* ======== FAILED ======== */
+  var F1=win({tabs:[AT('failed',{sel:1}),RV('done'),BD('idle'),AP('idle')],
+    lines:[P+'claude --model opus',RULE,'<span class="a-c">●</span> Executando <span class="a-w">npm run build</span>','','<span class="a-r">error</span> TS2307: Cannot find module \'./components/Listbox\'','  <span class="a-dim">src/App.tsx:14:27</span>','','<span class="a-r">✕</span> Build falhou (1 erro)'],
+    banner:{s:'failed',tx:'Falhou',sub:'código de saída 1',btns:[['secondary','u-log','Ver log'],['secondary','u-refresh','Reiniciar']]},
+    ctx:{ws:CTX.ws,sess:CTX.sess,s:'failed',size:CTX.size}});
+  var F2=win({tabs:[AT('failed',{sel:1}),RV('done'),BD('idle'),AP('idle')],
+    lines:[P+'claude --model opus',RULE,'<span class="a-c">●</span> Escrevendo <span class="a-w">src/styles/tokens.css</span>','','<span class="a-dim">Killed</span>'],
+    banner:{s:'failed',tx:'Processo encerrado',sub:'sinal SIGKILL',btns:[['secondary','u-log','Ver log'],['secondary','u-refresh','Reiniciar']]},
+    ctx:{ws:CTX.ws,sess:CTX.sess,s:'failed',size:CTX.size}});
+  var F3=win({tabs:[AT('idle',{sel:1}),RV('done'),BD('idle'),AP('failed',{unseen:1})],
+    lines:[P+'claude --model opus',RULE,'<span class="a-g">✓</span> Pronto para a próxima tarefa.','','<span class="a-dim">&gt;</span> <span class="cur"></span>'],
+    ctx:{ws:CTX.ws,sess:CTX.sess,s:'idle',size:CTX.size}});
+  var F4=win({tabs:[AT('blocked',{sel:1}),RV('done'),BD('idle'),AP('idle')],
+    lines:[P+'claude --model opus',RULE,'<span class="a-c">●</span> Lendo <span class="a-w">src/App.tsx</span>','','<span class="a-dim">a sessão tmux orkest-a1f3 não responde</span>'],
+    banner:{s:'blocked',tx:'Sessão desconectada',sub:'a sessão tmux não responde',btns:[['secondary','u-link','Reconectar']]},
+    ctx:{ws:CTX.ws,sess:CTX.sess,s:'blocked',label:'Desconectada',size:'—'}});
+
+  /* ======== MATRIZ ======== */
+  var states=['idle','running','done','blocked','failed'];
+  var ICON={idle:['a-lines','--ork-id-sage'],running:['a-staff','--ork-id-blue'],done:['a-dotring','--ork-id-lilac'],blocked:['a-hexagon','--ork-id-orange'],failed:['a-orbit','--ork-id-aqua']};
+  var NAME={idle:['docs','gemini · 2.5 pro'],running:['atlas','claude · opus 5.5'],done:['revisor','codex · gpt-5'],blocked:['build','opencode · deepseek v4'],failed:['api','claude · sonnet 5.5']};
+  function cell(s,mode){
+    var o={n:NAME[s][0],meta:NAME[s][1],s:s,ic:ICON[s][0],c:ICON[s][1],m:(s==='running')};
+    if(mode==='act')o.sel=1; if(mode==='unseen')o.unseen=1; if(mode==='hover')o.hv=1;
+    return '<div class="cell'+(mode==='act'?' act':'')+'"><div class="tabbar" style="padding-left:0">'+tab(o)+'</div><div class="below"></div></div>';
+  }
+  function matrix(cls){
+    var m='<div class="matrix'+(cls||'')+'"><span></span><span class="h">INATIVA</span><span class="h">ATIVA (fundida ao terminal)</span><span class="h">INATIVA + NOVA SAÍDA</span><span class="h">HOVER</span>';
+    states.forEach(function(s){m+='<div class="rl">'+LBL[s]+'<span>'+s+'</span></div>'+cell(s,'')+cell(s,'act')+cell(s,'unseen')+cell(s,'hover');});
+    return m+'</div>';
+  }
+
+  var V={};
+  V.tabs='<p class="intro">Matriz dos cinco estados (idle, running, done, blocked, failed) em quatro condições da aba. Aba de 40 px (§9.1): tile 24, nome 13/16, CLI·modelo 11/14, glifo de estado 14, trilho de 2 px na base. O estado é lido por <b>forma + cor + trilho</b>; running anima (arco e segmento do trilho); blocked e failed são estáticos e persistem.</p>'+matrix('')+
+    '<ul class="notes"><li>Aba ativa: fundo do terminal, linha de topo ciano de 2 px, trilho de estado mantido.</li><li>Ponto ciano de 6 px (nova saída) só aparece em abas <b>inativas</b>.</li><li>Hover mostra o × e o fundo <code>bg-hover</code>; o estado continua visível.</li></ul>';
+  V.running='<p class="intro">Estado <b>running</b>: ciano <code>accent</code>, arco girando e segmento de 24 px percorrendo o trilho. Sem banner: o terminal já é a evidência de atividade. Três variações.</p>'+
+    cap('R1','Executando — aba ativa','Arco e trilho animados; barra de contexto com estado e tempo decorrido.')+R1+
+    cap('R2','Executando — aba inativa com nova saída','Outro agente em foco; o agente em execução avisa por glifo, trilho e ponto ciano.')+R2+
+    cap('R3','Executando — movimento reduzido','prefers-reduced-motion: arco fixo e segmento do trilho parado; mesma informação, sem animação contínua.')+R3;
+  V.blocked='<p class="intro">Estado <b>blocked</b>: âmbar <code>attention</code>, triângulo com barra, trilho persistente e banner de 36 px colado à barra de contexto (empurra o terminal, nunca o cobre). O foco permanece no terminal; o botão do banner é opcional. Três variações de causa.</p>'+
+    cap('B1','Bloqueado — aguardando a sua resposta','Prompt de aprovação visível no terminal; o banner oferece "Ir ao prompt" (botão de 28 px).')+B1+
+    cap('B2','Bloqueado — aguardando outro agente','Chip identifica agente e tarefa (revisor · t-3f2a); "Ver revisor" abre a aba dele. Cursor vazado: nenhuma entrada esperada do usuário.')+B2+
+    cap('B3','Bloqueado — aba inativa','Pulsação única ao entrar (360 ms) e ponto de nova saída; o trilho âmbar persiste até resolver.')+B3;
+  V.failed='<p class="intro">Estado <b>failed</b>: vermelho <code>error</code>, quadrado arredondado com ✕, trilho persistente e banner com ações (Ver log, Reiniciar; 28 px). Sem tremor. A quarta variação mostra a "sessão desconectada" da §4.4, que usa o tom de atenção e o glifo de bloqueado por ser recuperável.</p>'+
+    cap('F1','Falhou — código de saída ≠ 0','Último erro visível no terminal; o banner traz o código e as ações.')+F1+
+    cap('F2','Falhou — processo encerrado por sinal','Mesmo banner, com a causa em texto ("sinal SIGKILL").')+F2+
+    cap('F3','Falhou — aba inativa','Glifo e trilho vermelhos na aba, mais ponto de nova saída; o terminal em foco não é interrompido.')+F3+
+    cap('F4','Sessão desconectada (§4.4)','Tom de atenção; ação única "Reconectar"; barra de contexto sem dimensões (—).')+F4;
+  V.gray='<p class="intro">Verificação V-03: a mesma matriz em <b>escala de cinza</b>. Os cinco estados continuam distinguíveis pela forma do glifo (anel, arco, disco com ✓, triângulo, quadrado com ✕).</p>'+matrix(' gray');
+
+  var root=document.getElementById('root');
+  root.innerHTML=Object.keys(V).map(function(k){return '<section class="view" id="v-'+k+'">'+V[k]+'</section>';}).join('');
+  var btns=document.querySelectorAll('.pv-nav button');
+  function show(v){
+    document.querySelectorAll('.view').forEach(function(e){e.classList.toggle('on',e.id==='v-'+v)});
+    btns.forEach(function(b){b.setAttribute('aria-pressed',b.dataset.view===v?'true':'false')});
+    try{history.replaceState(null,'','#'+v)}catch(e){}
+  }
+  btns.forEach(function(b){b.addEventListener('click',function(){show(b.dataset.view)})});
+  var h=(location.hash||'').slice(1); show(V[h]?h:'tabs');
+})();
+</script>
+</body>
+</html>

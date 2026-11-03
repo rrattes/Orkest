@@ -1,0 +1,458 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Orkest — Reorganização do topo e menu de configuração</title>
+<style>
+/* =====================================================================
+   Orkest · Direção A "Partitura" · ORKEST-VIS-ORG
+   Propostas de organização do cabeçalho/abas + menu de configuração.
+   Tokens = §3 + §9 (+ §9.9). Hex só dentro de :root. Quadros em 941×508, DPR 1.
+   Altura de linha do terminal = 20px (medida na captura real: 129×21).
+   ===================================================================== */
+:root{
+  --ork-bg-canvas:#0F1012; --ork-bg-chrome:#151619; --ork-bg-surface:#1B1D21; --ork-bg-raised:#222529;
+  --ork-bg-hover:#2A2D32; --ork-bg-terminal:#0C0D0F;
+  --ork-border-subtle:#25282D; --ork-border:#32363C; --ork-border-control:#70767F;
+  --ork-text-primary:#E6E8EB; --ork-text-secondary:#A3A9B2; --ork-text-tertiary:#8A919B; --ork-text-disabled:#5C626A; --ork-text-on-accent:#07181C;
+  --ork-accent:#4CC3D9; --ork-accent-hover:#6FD3E5; --ork-accent-subtle:rgba(76,195,217,.14);
+  --ork-success:#5DC47E; --ork-attention:#E8B04A; --ork-error:#EE6B63; --ork-neutral:#8A919B;
+  --ork-id-blue:#7AA7F0; --ork-id-lilac:#B38DEB; --ork-id-pink:#E58BB0; --ork-id-orange:#F0A06A;
+  --ork-id-sand:#D9C36A; --ork-id-sage:#8CCB8C; --ork-id-aqua:#6FCFC4; --ork-id-stone:#B5B9C2;
+  --ork-term-fg:#D7DAE0; --ork-term-selection:rgba(76,195,217,.28);
+  --ork-ansi-bright-black:#7A808A; --ork-ansi-red:#EE6B63; --ork-ansi-green:#5DC47E; --ork-ansi-yellow:#E8B04A;
+  --ork-ansi-blue:#6C9EF0; --ork-ansi-cyan:#4CC3D9; --ork-ansi-white:#C9CED6;
+  --ork-font-ui:"IBM Plex Sans", system-ui, sans-serif;
+  --ork-font-mono:"JetBrains Mono", ui-monospace, "DejaVu Sans Mono", monospace;
+  --ork-space-2:2px; --ork-space-4:4px; --ork-space-6:6px; --ork-space-8:8px; --ork-space-10:10px; --ork-space-12:12px;
+  --ork-space-16:16px; --ork-space-20:20px; --ork-space-24:24px; --ork-space-32:32px;
+  --ork-r-sm:2px; --ork-r-md:4px; --ork-r-lg:6px; --ork-r-xl:8px;
+  --ork-shadow-pop:0 8px 24px rgba(0,0,0,.45), 0 0 0 1px var(--ork-border);
+  --ork-shadow-modal:0 24px 64px rgba(0,0,0,.6), 0 0 0 1px var(--ork-border);
+  --ork-scrim:rgba(5,6,8,.6);
+  --ork-dur-fast:120ms; --ork-dur-loop:1600ms; --ork-ease-out:cubic-bezier(.2,.8,.2,1);
+  /* vigentes */
+  --ork-ctxbar-h:24px; --ork-banner-h:36px; --ork-btn-h-sm:28px; --ork-ctl-h:36px; --ork-btn-h:32px;
+  /* PROPOSTOS neste pack (não aprovados) */
+  --ork-appbar-h:32px;      /* H1: faixa do app */
+  --ork-tabrow-h:40px;      /* H1 */
+  --ork-tabrow-h-lg:48px;   /* H2 */
+  --ork-strip-h:32px;       /* H3: faixa do agente */
+  --ork-icon-btn:32px;      /* botão de ícone do cabeçalho (engrenagem, avisos) */
+  --ork-tab-gap:4px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:var(--ork-bg-canvas);color:var(--ork-text-primary);font:400 13px/20px var(--ork-font-ui);-webkit-font-smoothing:antialiased}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+:focus-visible{outline:2px solid var(--ork-accent);outline-offset:2px}
+svg{display:block;flex:none}
+.ico{fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+
+/* moldura do pack */
+.pv-head{display:flex;align-items:center;gap:var(--ork-space-16);flex-wrap:wrap;padding:var(--ork-space-12) var(--ork-space-24);background:var(--ork-bg-chrome);border-bottom:1px solid var(--ork-border-subtle)}
+.pv-head h1{font-size:14px;line-height:20px;font-weight:600}
+.pv-head .sub{color:var(--ork-text-tertiary);font-size:12px;line-height:16px}
+.pv-nav{display:flex;gap:var(--ork-space-4);margin-left:auto;flex-wrap:wrap}
+.pv-nav button{height:32px;padding:0 var(--ork-space-12);border-radius:var(--ork-r-md);color:var(--ork-text-secondary);font-weight:500}
+.pv-nav button:hover{background:var(--ork-bg-hover);color:var(--ork-text-primary)}
+.pv-nav button[aria-pressed="true"]{background:var(--ork-accent-subtle);color:var(--ork-accent)}
+main{padding:var(--ork-space-24);max-width:1100px}
+.view{display:none}.view.on{display:block}
+.intro{color:var(--ork-text-secondary);max-width:780px;margin-bottom:var(--ork-space-16)}
+.cap{margin:var(--ork-space-32) 0 var(--ork-space-8);display:flex;flex-direction:column;gap:var(--ork-space-2)}
+.cap b{font-size:14px;line-height:20px;font-weight:600;display:flex;align-items:center;gap:var(--ork-space-8)}
+.cap b i{font:500 11px/14px var(--ork-font-mono);color:var(--ork-accent);background:var(--ork-accent-subtle);border-radius:var(--ork-r-md);padding:2px 6px;font-style:normal}
+.cap span{color:var(--ork-text-tertiary);font-size:12px;line-height:16px}
+table.t{border-collapse:collapse;margin:var(--ork-space-16) 0;font-size:12px;line-height:16px;max-width:1000px}
+table.t th,table.t td{border-bottom:1px solid var(--ork-border-subtle);padding:6px 12px 6px 0;text-align:left;vertical-align:top}
+table.t th{color:var(--ork-text-tertiary);font:500 11px/14px var(--ork-font-mono);letter-spacing:.02em}
+table.t td.n{font-family:var(--ork-font-mono);white-space:nowrap}
+.ok{color:var(--ork-success)}.no{color:var(--ork-attention)}
+.notes{margin-top:var(--ork-space-16);color:var(--ork-text-tertiary);font-size:12px;line-height:16px;max-width:780px}
+.notes li{margin-left:16px;margin-bottom:4px}
+
+/* janela 941×508 */
+.win{position:relative;width:941px;height:508px;display:flex;flex-direction:column;background:var(--ork-bg-canvas);border:1px solid var(--ork-border);border-radius:var(--ork-r-xl);overflow:hidden}
+
+/* ---------- peças do cabeçalho ---------- */
+.ibtn{width:var(--ork-icon-btn);height:var(--ork-icon-btn);display:grid;place-items:center;border-radius:var(--ork-r-md);color:var(--ork-text-secondary);position:relative}
+.ibtn:hover,.ibtn.on{background:var(--ork-bg-hover);color:var(--ork-text-primary)}
+.ibtn.on{background:var(--ork-accent-subtle);color:var(--ork-accent)}
+.ibtn svg{width:16px;height:16px}
+.ibtn .dot{position:absolute;top:6px;right:6px;width:8px;height:8px;border-radius:50%;background:var(--ork-attention);box-shadow:0 0 0 2px var(--ork-bg-chrome)}
+.sp{flex:1}
+.tools{display:flex;align-items:center;gap:var(--ork-space-4)}
+.brand{display:flex;align-items:center;gap:var(--ork-space-8);font-weight:600;font-size:13px;line-height:16px;color:var(--ork-text-primary)}
+.brand svg{width:16px;height:16px;color:var(--ork-accent)}
+.vsep{width:1px;height:24px;background:var(--ork-border);align-self:center;margin:0 var(--ork-space-8)}
+
+/* abas */
+.tile{width:24px;height:24px;border-radius:var(--ork-r-lg);display:grid;place-items:center;color:var(--c);background:color-mix(in srgb, var(--c) 16%, transparent)}
+.tile svg{width:16px;height:16px}
+.tile.lg{width:28px;height:28px}.tile.lg svg{width:18px;height:18px}
+.tile.sm{width:18px;height:18px;border-radius:var(--ork-r-md)}.tile.sm svg{width:12px;height:12px}
+.tab{position:relative;display:grid;align-items:center;text-align:left;color:var(--ork-text-secondary)}
+.tab:hover{background:var(--ork-bg-hover);color:var(--ork-text-primary)}
+.tab .nm{display:flex;align-items:center;gap:var(--ork-space-6);font-size:13px;line-height:16px;font-weight:500;color:inherit;min-width:0}
+.tab .nm span.t{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tab .mt{font:400 11px/14px var(--ork-font-mono);letter-spacing:.02em;color:var(--ork-text-tertiary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tab .st{display:flex;align-items:center;gap:var(--ork-space-6)}
+.tab .x{width:16px;height:16px;display:grid;place-items:center;border-radius:var(--ork-r-sm);color:var(--ork-text-tertiary);opacity:0}
+.tab:hover .x,.tab.sel .x{opacity:1}
+.tab .rail{position:absolute;left:0;right:0;bottom:0;height:2px;overflow:hidden;z-index:3}
+.tab .rail i{display:block;height:100%;width:100%}
+.tab .rail.run i{width:24px;background:var(--ork-accent);animation:rail var(--ork-dur-loop) linear infinite}
+@keyframes rail{from{transform:translateX(-24px)}to{transform:translateX(200px)}}
+.tab.sel{color:var(--ork-text-primary);z-index:2}
+.tab.sel::before{content:"";position:absolute;left:0;right:0;top:0;height:2px;background:var(--ork-accent);border-radius:var(--ork-r-md) var(--ork-r-md) 0 0}
+.mk{width:8px;height:8px;color:var(--ork-text-secondary)}
+.unseen{width:6px;height:6px;border-radius:50%;background:var(--ork-accent)}
+.g{width:14px;height:14px;fill:none;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+.g-idle{stroke:var(--ork-neutral)}
+.g-run{stroke:var(--ork-accent);animation:spin 900ms linear infinite;transform-origin:50% 50%}
+.g-done circle{fill:var(--ork-success);stroke:none}.g-done path{stroke:var(--ork-bg-canvas)}
+.g-block{stroke:var(--ork-attention)}
+.g-fail{stroke:var(--ork-error)}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* H1 · duas camadas */
+.h1 .appbar{height:var(--ork-appbar-h);flex:none;display:flex;align-items:center;padding:0 var(--ork-space-8) 0 var(--ork-space-12);background:var(--ork-bg-canvas);border-bottom:1px solid var(--ork-border-subtle)}
+.h1 .ibtn{width:28px;height:28px}
+.h1 .tabrow{position:relative;height:var(--ork-tabrow-h);flex:none;display:flex;align-items:stretch;background:var(--ork-bg-chrome);padding-left:var(--ork-space-8)}
+.h1 .tabrow::after{content:"";position:absolute;left:0;right:0;bottom:0;height:1px;background:var(--ork-accent);z-index:1}
+.h1 .tab{width:210px;height:var(--ork-tabrow-h);grid-template-columns:24px 1fr auto auto;column-gap:var(--ork-space-8);padding:0 var(--ork-space-8) 0 var(--ork-space-12)}
+.h1 .tab .tile{grid-row:1 / span 2}.h1 .tab .nm{grid-column:2;align-self:end}.h1 .tab .mt{grid-column:2;grid-row:2;align-self:start}
+.h1 .tab .st{grid-column:3;grid-row:1 / span 2}.h1 .tab .x{grid-column:4;grid-row:1 / span 2}
+.h1 .tab.sel{background:var(--ork-bg-terminal);border-radius:var(--ork-r-md) var(--ork-r-md) 0 0}
+.h1 .plus-wrap{align-self:center;margin-left:var(--ork-space-8)}
+
+/* H2 · linha única de 48px, com respiro e grupos */
+.h2 .row{position:relative;height:var(--ork-tabrow-h-lg);flex:none;display:flex;align-items:flex-end;gap:var(--ork-tab-gap);background:var(--ork-bg-chrome);padding:0 var(--ork-space-8)}
+.h2 .row::after{content:"";position:absolute;left:0;right:0;bottom:0;height:1px;background:var(--ork-accent);z-index:1}
+.h2 .brandbtn{align-self:center;margin-right:var(--ork-space-4)}
+.h2 .tab{flex:1 1 0;min-width:168px;max-width:220px;height:var(--ork-tabrow-h-lg);grid-template-columns:28px 1fr auto auto;column-gap:var(--ork-space-8);padding:0 var(--ork-space-8) 0 var(--ork-space-12);border-radius:var(--ork-r-lg) var(--ork-r-lg) 0 0}
+.h2 .tab .tile{grid-row:1 / span 2}.h2 .tab .nm{grid-column:2;align-self:end;padding-bottom:1px}.h2 .tab .mt{grid-column:2;grid-row:2;align-self:start;padding-top:1px}
+.h2 .tab .st{grid-column:3;grid-row:1 / span 2}.h2 .tab .x{grid-column:4;grid-row:1 / span 2}
+.h2 .tab.sel{background:var(--ork-bg-terminal)}
+.h2 .tab .x{display:none}.h2 .tab:hover .x{display:grid}.h2 .tab{grid-template-columns:28px 1fr auto}
+.h2 .tools{align-self:center;display:flex;gap:var(--ork-space-4);margin-left:auto}
+
+/* H3 · abas compactas + faixa do agente */
+.h3 .row1{position:relative;height:36px;flex:none;display:flex;align-items:flex-end;gap:var(--ork-space-2);background:var(--ork-bg-chrome);padding:0 var(--ork-space-8)}
+.h3 .row1 .brandbtn{align-self:center;margin-right:var(--ork-space-4)}
+.h3 .tab{flex:0 1 168px;min-width:120px;height:32px;grid-template-columns:18px 1fr auto auto;column-gap:var(--ork-space-8);padding:0 var(--ork-space-8);border-radius:var(--ork-r-lg) var(--ork-r-lg) 0 0}
+.h3 .tab.sel{background:var(--ork-bg-terminal);height:36px}
+.h3 .tab .x{display:none}.h3 .tab:hover .x{display:grid}.h3 .tab{grid-template-columns:18px 1fr auto}
+.h3 .tools{align-self:center;display:flex;gap:var(--ork-space-4)}
+.h3 .strip{position:relative;height:var(--ork-strip-h);flex:none;display:flex;align-items:center;gap:var(--ork-space-12);padding:0 var(--ork-space-8) 0 var(--ork-space-12);background:var(--ork-bg-terminal);border-bottom:1px solid var(--ork-border-subtle)}
+.h3 .strip .who{display:flex;align-items:center;gap:var(--ork-space-8);font-weight:600}
+.chip{display:inline-flex;align-items:center;gap:var(--ork-space-6);height:22px;padding:0 var(--ork-space-8);border-radius:var(--ork-r-md);background:var(--ork-bg-raised);font:400 11px/14px var(--ork-font-mono);color:var(--ork-text-secondary);letter-spacing:.02em}
+.chip svg{width:12px;height:12px}
+.stt{display:inline-flex;align-items:center;gap:var(--ork-space-6);font:500 12px/16px var(--ork-font-ui);color:var(--c)}
+.gbtn{height:var(--ork-btn-h-sm);padding:0 var(--ork-space-8);border-radius:var(--ork-r-md);font-weight:500;font-size:12px;line-height:16px;display:inline-flex;align-items:center;gap:var(--ork-space-6);color:var(--ork-text-secondary)}
+.gbtn:hover{background:var(--ork-bg-hover);color:var(--ork-text-primary)}
+.gbtn svg{width:14px;height:14px}
+
+/* terminal, banner, contexto */
+.term{position:relative;flex:1;min-height:0;background:var(--ork-bg-terminal);padding:var(--ork-space-8) var(--ork-space-12);overflow:hidden}
+.term pre{font:400 13px/20px var(--ork-font-mono);color:var(--ork-term-fg);white-space:pre;font-variant-ligatures:none}
+.a-dim{color:var(--ork-ansi-bright-black)}.a-g{color:var(--ork-ansi-green)}.a-y{color:var(--ork-ansi-yellow)}.a-c{color:var(--ork-ansi-cyan)}.a-b{color:var(--ork-ansi-blue)}.a-r{color:var(--ork-ansi-red)}.a-w{color:var(--ork-ansi-white)}
+.sel-t{background:var(--ork-term-selection)}
+.cur{display:inline-block;width:.6em;height:1.1em;vertical-align:-.2em;background:var(--ork-accent)}
+.banner{flex:none;height:var(--ork-banner-h);display:flex;align-items:center;gap:var(--ork-space-12);padding:0 var(--ork-space-12);background:color-mix(in srgb, var(--c) 14%, var(--ork-bg-terminal));border-top:1px solid color-mix(in srgb, var(--c) 45%, transparent)}
+.banner .tx{font-weight:500;color:var(--ork-text-primary);white-space:nowrap}.banner .tx em{font-style:normal;font-weight:400;color:var(--ork-text-secondary)}
+.btn{height:var(--ork-btn-h-sm);padding:0 var(--ork-space-12);border-radius:var(--ork-r-md);font-weight:500;font-size:13px;line-height:16px;display:inline-flex;align-items:center;gap:var(--ork-space-6)}
+.btn.secondary{border:1px solid var(--ork-border-control);color:var(--ork-text-primary)}.btn svg{width:14px;height:14px}
+.btn.lg{height:var(--ork-btn-h)}.btn.primary{background:var(--ork-accent);color:var(--ork-text-on-accent)}
+.ctx{position:relative;height:var(--ork-ctxbar-h);flex:none;display:flex;align-items:center;gap:var(--ork-space-16);padding:0 var(--ork-space-12);background:var(--ork-bg-chrome);border-top:1px solid var(--ork-border-subtle);font:400 11px/14px var(--ork-font-mono);letter-spacing:.02em;color:var(--ork-text-tertiary)}
+.ctx .mid{position:absolute;left:50%;transform:translateX(-50%)}
+
+/* popover */
+.pop{position:absolute;z-index:20;width:288px;background:var(--ork-bg-surface);border-radius:var(--ork-r-lg);box-shadow:var(--ork-shadow-pop);padding:var(--ork-space-4)}
+.pop .it{width:100%;height:32px;display:flex;align-items:center;gap:var(--ork-space-8);padding:0 var(--ork-space-8);border-radius:var(--ork-r-md);text-align:left;color:var(--ork-text-primary)}
+.pop .it:hover,.pop .it.hl{background:var(--ork-bg-raised)}
+.pop .it svg.ico{width:16px;height:16px;color:var(--ork-text-secondary)}
+kbd{margin-left:auto;font:400 11px/14px var(--ork-font-mono);color:var(--ork-text-tertiary);border:1px solid var(--ork-border);border-radius:var(--ork-r-sm);padding:2px 6px}
+.pop hr{border:0;border-top:1px solid var(--ork-border-subtle);margin:var(--ork-space-4) 0}
+.pop .cap2{padding:var(--ork-space-6) var(--ork-space-8) var(--ork-space-2);font:500 11px/14px var(--ork-font-mono);color:var(--ork-text-tertiary);letter-spacing:.02em}
+.pop .row2{height:32px;display:flex;align-items:center;gap:var(--ork-space-8);padding:0 var(--ork-space-8)}
+.pop .row2 .lb{flex:1}
+
+/* controles de configuração */
+.stepper{display:inline-flex;align-items:center;border:1px solid var(--ork-border-control);border-radius:var(--ork-r-md);height:28px}
+.stepper button{width:26px;height:26px;display:grid;place-items:center;color:var(--ork-text-secondary)}.stepper button:hover{background:var(--ork-bg-hover);color:var(--ork-text-primary)}
+.stepper b{min-width:34px;text-align:center;font:500 12px/16px var(--ork-font-mono)}
+.stepper svg{width:12px;height:12px}
+.tg{width:28px;height:16px;border-radius:var(--ork-r-xl);background:var(--ork-border-control);position:relative;flex:none}
+.tg::after{content:"";position:absolute;top:2px;left:2px;width:12px;height:12px;border-radius:var(--ork-r-lg);background:var(--ork-text-primary)}
+.tg.on{background:var(--ork-accent)}.tg.on::after{left:14px;background:var(--ork-text-on-accent)}
+.tg.dis{opacity:.4}
+.seg{display:inline-flex;border:1px solid var(--ork-border-control);border-radius:var(--ork-r-md);padding:2px}
+.seg button{height:22px;padding:0 var(--ork-space-12);border-radius:var(--ork-r-sm);color:var(--ork-text-secondary);font-weight:500;font-size:12px}
+.seg button.on{background:var(--ork-bg-raised);color:var(--ork-text-primary)}
+.field{height:var(--ork-ctl-h);display:flex;align-items:center;gap:var(--ork-space-8);padding:0 var(--ork-space-12);background:var(--ork-bg-surface);border:1px solid var(--ork-border-control);border-radius:var(--ork-r-md);min-width:210px}
+.field.mono{font:400 12px/16px var(--ork-font-mono)}.field .grow{flex:1;white-space:nowrap}.field svg{width:14px;height:14px;color:var(--ork-text-secondary)}
+.field.dis{border-color:var(--ork-border);color:var(--ork-text-disabled)}
+
+/* diálogo de configurações */
+.scrim{position:absolute;inset:0;background:var(--ork-scrim);display:flex;align-items:center;justify-content:center;z-index:10}
+.dlg{width:560px;max-height:85%;display:flex;flex-direction:column;background:var(--ork-bg-surface);border-radius:var(--ork-r-xl);box-shadow:var(--ork-shadow-modal)}
+.dlg.wide{width:640px}
+.dlg .hd{flex:none;position:relative;padding:var(--ork-space-12) var(--ork-space-16);border-bottom:1px solid var(--ork-border-subtle)}
+.dlg .hd h2{font-size:14px;line-height:20px;font-weight:600}
+.dlg .hd .x{position:absolute;right:var(--ork-space-8);top:var(--ork-space-8);width:28px;height:28px;display:grid;place-items:center;border-radius:var(--ork-r-md);color:var(--ork-text-secondary)}
+.dlg .hd .x svg{width:16px;height:16px}
+.dlg .bd{flex:1;min-height:0;overflow:hidden;padding:var(--ork-space-12) var(--ork-space-16) var(--ork-space-16);position:relative}
+.dlg .ft{flex:none;display:flex;align-items:center;gap:var(--ork-space-8);padding:var(--ork-space-12) var(--ork-space-16);border-top:1px solid var(--ork-border-subtle)}
+.dlg .ft .hint{flex:1;font-size:12px;line-height:16px;color:var(--ork-text-tertiary)}
+.sec+.sec{margin-top:var(--ork-space-16)}
+.sec h3{font-size:12px;line-height:16px;font-weight:600;color:var(--ork-text-secondary);margin-bottom:var(--ork-space-4)}
+.srow{display:flex;align-items:center;gap:var(--ork-space-16);min-height:44px;padding:var(--ork-space-6) 0;border-bottom:1px solid var(--ork-border-subtle)}
+.srow:last-child{border-bottom:0}
+.srow .lb{flex:1;min-width:0}.srow .lb b{display:block;font-weight:500;font-size:13px;line-height:16px}
+.srow .lb span{display:block;font-size:12px;line-height:16px;color:var(--ork-text-tertiary)}
+.tag{font:500 11px/14px var(--ork-font-mono);color:var(--ork-attention);background:color-mix(in srgb, var(--ork-attention) 14%, transparent);border-radius:var(--ork-r-md);padding:1px 6px;margin-left:6px;letter-spacing:.02em;display:inline}
+.sbar{position:absolute;top:8px;right:3px;bottom:8px;width:8px}.sbar i{position:absolute;right:0;top:0;width:8px;height:34%;border-radius:var(--ork-r-sm);background:var(--ork-border-control);opacity:.6}
+.nav{width:168px;flex:none;border-right:1px solid var(--ork-border-subtle);padding:var(--ork-space-8)}
+.nav button{width:100%;height:32px;display:flex;align-items:center;gap:var(--ork-space-8);padding:0 var(--ork-space-8);border-radius:var(--ork-r-md);color:var(--ork-text-secondary);text-align:left}
+.nav button svg{width:16px;height:16px}.nav button:hover{background:var(--ork-bg-hover);color:var(--ork-text-primary)}
+.nav button.on{background:var(--ork-accent-subtle);color:var(--ork-text-primary)}.nav button.on svg{color:var(--ork-accent)}
+.split{display:flex;flex:1;min-height:0}
+.split .bd{flex:1}
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="a-staff" viewBox="0 0 16 16"><path d="M2 4h12M2 6h12M2 8h12M2 10h12M2 12h12" class="ico" stroke-width="1.25"/></symbol>
+  <symbol id="a-mark" viewBox="0 0 16 16"><path d="M2 5h12M2 8h12M2 11h12" class="ico"/><circle cx="10.5" cy="6.5" r="1.7" fill="currentColor"/></symbol>
+  <symbol id="a-dotring" viewBox="0 0 16 16"><circle cx="8" cy="8" r="5" class="ico"/><circle cx="8" cy="8" r="1.2" fill="currentColor"/></symbol>
+  <symbol id="a-hexagon" viewBox="0 0 16 16"><path d="M8 2 13 5v6L8 14 3 11V5Z" class="ico"/></symbol>
+  <symbol id="a-orbit" viewBox="0 0 16 16"><ellipse cx="8" cy="8" rx="6" ry="2.5" transform="rotate(-30 8 8)" class="ico"/><circle cx="8" cy="8" r="1.4" fill="currentColor"/></symbol>
+  <symbol id="u-plus" viewBox="0 0 16 16"><path d="M8 3v10M3 8h10" class="ico"/></symbol>
+  <symbol id="u-minus" viewBox="0 0 16 16"><path d="M3 8h10" class="ico"/></symbol>
+  <symbol id="u-x" viewBox="0 0 16 16"><path d="M4 4l8 8M12 4l-8 8" class="ico"/></symbol>
+  <symbol id="u-gear" viewBox="0 0 16 16"><circle cx="8" cy="8" r="2.2" class="ico"/><path d="M8 1.8v1.6M8 12.6v1.6M1.8 8h1.6M12.6 8h1.6M3.6 3.6l1.1 1.1M11.3 11.3l1.1 1.1M12.4 3.6l-1.1 1.1M4.7 11.3l-1.1 1.1" class="ico"/></symbol>
+  <symbol id="u-bell" viewBox="0 0 16 16"><path d="M4 11V7.5a4 4 0 0 1 8 0V11l1 1.5H3Z M6.5 14h3" class="ico"/></symbol>
+  <symbol id="u-refresh" viewBox="0 0 16 16"><path d="M13 8a5 5 0 1 1-1.5-3.5M13 3v3h-3" class="ico"/></symbol>
+  <symbol id="u-log" viewBox="0 0 16 16"><path d="M3 4h10M3 8h10M3 12h6" class="ico"/></symbol>
+  <symbol id="u-edit" viewBox="0 0 16 16"><path d="M3 13l.6-2.6L11 3l2 2-7.4 7.4Z" class="ico"/></symbol>
+  <symbol id="u-folder" viewBox="0 0 16 16"><path d="M2 5.5V12a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1V6.5a1 1 0 0 0-1-1H8L6.5 4H3a1 1 0 0 0-1 1Z" class="ico"/></symbol>
+  <symbol id="u-chev" viewBox="0 0 16 16"><path d="M4 6l4 4 4-4" class="ico"/></symbol>
+  <symbol id="u-prompt" viewBox="0 0 16 16"><path d="M3 4l4 4-4 4M9 12h4" class="ico"/></symbol>
+  <symbol id="u-keys" viewBox="0 0 16 16"><rect x="2" y="4" width="12" height="8" rx="1.5" class="ico"/><path d="M5 7h.01M8 7h.01M11 7h.01M5 9.5h6" class="ico"/></symbol>
+  <symbol id="u-info" viewBox="0 0 16 16"><circle cx="8" cy="8" r="5.5" class="ico"/><path d="M8 7.5v3.2M8 5.4v.01" class="ico"/></symbol>
+  <symbol id="u-pulse" viewBox="0 0 16 16"><path d="M2 8h3l1.5-4 3 8L11 8h3" class="ico"/></symbol>
+  <symbol id="u-palette" viewBox="0 0 16 16"><circle cx="8" cy="8" r="5.5" class="ico"/><path d="M8 2.5v11" class="ico"/></symbol>
+  <symbol id="u-agents" viewBox="0 0 16 16"><circle cx="5.5" cy="6" r="2" class="ico"/><circle cx="11" cy="6.5" r="1.6" class="ico"/><path d="M2 12.5c.4-2 1.8-3 3.5-3s3.1 1 3.5 3M10 10.2c1.8-.3 3.4.4 4 2.3" class="ico"/></symbol>
+  <symbol id="u-sys" viewBox="0 0 16 16"><rect x="2.5" y="3" width="11" height="8" rx="1.5" class="ico"/><path d="M6 13.5h4" class="ico"/></symbol>
+</svg>
+
+<header class="pv-head">
+  <div><h1>Orkest — Reorganização do topo + menu de configuração</h1>
+    <div class="sub">ORKEST-VIS-ORG · Direção A "Partitura" · tokens §3+§9+§9.9 · quadros em 941×508, DPR 1 · PROPOSTA, nada aprovado</div></div>
+  <nav class="pv-nav" aria-label="Seções do pack">
+    <button data-view="cmp" aria-pressed="true">Comparativo</button>
+    <button data-view="h1" aria-pressed="false">H1 · Duas camadas</button>
+    <button data-view="h2" aria-pressed="false">H2 · Linha única</button>
+    <button data-view="h3" aria-pressed="false">H3 · Faixa do agente</button>
+    <button data-view="cfg" aria-pressed="false">Configurações</button>
+  </nav>
+</header>
+<main id="root"></main>
+
+<script>
+(function(){
+  var G={
+    idle:'<svg class="g g-idle" viewBox="0 0 14 14"><circle cx="7" cy="7" r="5.25"/></svg>',
+    running:'<svg class="g g-run" viewBox="0 0 14 14"><path d="M7 1.75A5.25 5.25 0 1 1 1.75 7"/></svg>',
+    done:'<svg class="g g-done" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6"/><path d="M4.25 7.25 6.25 9.25 9.75 5"/></svg>',
+    blocked:'<svg class="g g-block" viewBox="0 0 14 14"><path d="M7 1.75 12.75 11.75H1.25Z"/><path d="M7 5.5v2.75M7 10.1v.01"/></svg>',
+    failed:'<svg class="g g-fail" viewBox="0 0 14 14"><rect x="1.75" y="1.75" width="10.5" height="10.5" rx="2.5"/><path d="M5 5l4 4M9 5l-4 4"/></svg>'
+  };
+  var COL={idle:'--ork-neutral',running:'--ork-accent',done:'--ork-success',blocked:'--ork-attention',failed:'--ork-error'};
+  var LBL={idle:'Ocioso',running:'Executando',done:'Concluído',blocked:'Bloqueado',failed:'Falhou'};
+  var MK='<svg class="mk" viewBox="0 0 8 8"><path d="M4 .5 7.5 4 4 7.5.5 4Z" fill="currentColor"/></svg>';
+  function I(id,cls){return '<svg class="'+(cls||'')+'"><use href="#'+id+'"/></svg>';}
+  var X='<span class="x"><svg width="12" height="12"><use href="#u-x"/></svg></span>';
+  function rail(s){ if(s==='running')return '<span class="rail run"><i></i></span>'; if(s==='idle')return ''; return '<span class="rail"><i style="background:var('+COL[s]+')"></i></span>'; }
+  function T(n,meta,s,ic,c,o){o=o||{};return {n:n,meta:meta,s:s,ic:ic,c:c,m:o.m,sel:o.sel,unseen:o.unseen};}
+  var AT=function(s,o){return T('atlas','claude · opus 5.5',s,'a-staff','--ork-id-blue',Object.assign({m:1},o||{}));};
+  var RV=function(s,o){return T('revisor','codex · gpt-5',s,'a-dotring','--ork-id-lilac',o);};
+  var BD=function(s,o){return T('build','opencode · deepseek v4',s,'a-hexagon','--ork-id-orange',o);};
+  var AP=function(s,o){return T('api','claude · sonnet 5.5',s,'a-orbit','--ork-id-aqua',o);};
+  function tileH(t,size){return '<span class="tile'+(size?' '+size:'')+'" style="--c:var('+t.c+')">'+I(t.ic)+'</span>';}
+  function tabFull(t,size){
+    return '<button class="tab'+(t.sel?' sel':'')+'" role="tab" aria-selected="'+(!!t.sel)+'" title="'+LBL[t.s]+'">'+tileH(t,size)+
+      '<span class="nm"><span class="t">'+t.n+'</span>'+(t.m?MK:'')+'</span><span class="mt">'+t.meta+'</span>'+
+      '<span class="st">'+(t.unseen?'<span class="unseen"></span>':'')+G[t.s]+'</span>'+X+rail(t.s)+'</button>';
+  }
+  function tabCompact(t){
+    return '<button class="tab'+(t.sel?' sel':'')+'" role="tab" aria-selected="'+(!!t.sel)+'" title="'+t.n+' · '+t.meta+' · '+LBL[t.s]+'">'+tileH(t,'sm')+
+      '<span class="nm"><span class="t">'+t.n+'</span>'+(t.m?MK:'')+'</span><span class="st">'+(t.unseen?'<span class="unseen"></span>':'')+G[t.s]+'</span>'+X+rail(t.s)+'</button>';
+  }
+  var PLUS='<button class="ibtn" aria-label="Criar ou abrir agente">'+I('u-plus')+'</button>';
+  function tools(gearOn,bellDot){
+    return '<span class="tools"><button class="ibtn" aria-label="Avisos">'+I('u-bell')+(bellDot?'<span class="dot"></span>':'')+'</button>'+
+      '<button class="ibtn'+(gearOn?' on':'')+'" aria-label="Configurações" aria-haspopup="menu" aria-expanded="'+(!!gearOn)+'">'+I('u-gear')+'</button></span>';
+  }
+  var BRANDBTN='<button class="ibtn brandbtn" aria-label="Orkest"><span class="brand">'+I('a-staff')+'</span></button>';
+
+  function head1(tabs,o){
+    o=o||{};
+    return '<div class="appbar"><span class="brand">'+I('a-mark')+'Orkest</span><span class="sp"></span>'+tools(o.gear,o.bell)+'</div>'+
+      '<div class="tabrow" role="tablist">'+tabs.map(function(t){return tabFull(t);}).join('')+'<div class="plus-wrap">'+PLUS+'</div></div>';
+  }
+  function head2(tabs,o){
+    o=o||{};
+    var out='<div class="row" role="tablist">'+BRANDBTN;
+    tabs.forEach(function(t,i){ out+=tabFull(t,'lg'); if(i===0)out+='<span class="vsep" aria-hidden="true"></span>'; });
+    out+='<span style="align-self:center">'+PLUS+'</span>'+tools(o.gear,o.bell)+'</div>';
+    return out;
+  }
+  function head3(tabs,o){
+    o=o||{};
+    var sel=tabs.filter(function(t){return t.sel;})[0];
+    var out='<div class="row1" role="tablist">'+BRANDBTN+tabs.map(tabCompact).join('')+'<span style="align-self:center">'+PLUS+'</span><span class="sp"></span>'+tools(o.gear,o.bell)+'</div>';
+    out+='<div class="strip"><span class="who">'+tileH(sel,'sm')+sel.n+(sel.m?MK:'')+'</span>'+
+      '<span class="chip">'+I('u-prompt')+sel.meta+'</span><span class="chip">'+I('u-folder')+'~/Work/orkest</span>'+
+      '<span class="stt" style="--c:var('+COL[sel.s]+')">'+G[sel.s]+LBL[sel.s]+(o.elapsed?' · '+o.elapsed:'')+'</span><span class="sp"></span>'+
+      '<button class="gbtn">'+I('u-refresh')+'Reiniciar</button><button class="gbtn">'+I('u-log')+'Ver log</button><button class="gbtn">'+I('u-edit')+'Renomear</button></div>';
+    return out;
+  }
+  function bannerH(b){
+    if(!b)return '';
+    return '<div class="banner" role="status" style="--c:var('+COL[b.s]+')">'+G[b.s]+'<span class="tx">'+b.tx+' <em>· '+b.sub+'</em></span><span class="sp"></span>'+
+      '<button class="btn secondary">'+I('u-prompt')+b.btn+'</button></div>';
+  }
+  function ctxH(s,extra,r){
+    return '<div class="ctx"><span>~/Work/orkest</span><span class="mid">sessão tmux orkest-a1f3</span><span class="sp"></span>'+
+      '<span class="stt" style="--c:var('+COL[s]+')">'+G[s]+LBL[s]+(extra?' · '+extra:'')+'</span><span>· 129×'+r+'</span></div>';
+  }
+  var P='<span class="a-g">rrattes</span><span class="a-dim">@</span><span class="a-b">orkest</span> <span class="a-c">~/Work/orkest</span> <span class="a-dim">$</span> ';
+  var RULE='<span class="a-dim">──────────────────────────────────────────────────────────────────</span>';
+  var L_RUN=[P+'claude --model opus',RULE,'<span class="a-c">●</span> Lendo <span class="a-w">docs/design/design-system.md</span>','<span class="a-c">●</span> Lendo <span class="a-w">src/App.tsx</span>','  <span class="a-dim">└ 2 arquivos · 612 linhas</span>','','<span class="a-g">✓</span> Tokens da §3 mapeados para <span class="a-w">theme.extend</span>','<span class="a-c">●</span> Escrevendo <span class="a-w">src/styles/tokens.css</span> <span class="a-dim">(+148 −0)</span>','','<span class="a-dim">&gt;</span> <span class="cur"></span>'];
+  var L_BLK=['<span class="a-c">●</span> Escrevendo <span class="a-w">src/styles/tokens.css</span> <span class="a-dim">(+148 −0)</span>','','<span class="a-y">▲</span> Aguardando aprovação do usuário para o comando abaixo:','    <span class="sel-t">npm run tauri dev -- --no-watch</span>','  <span class="a-dim">[y] aprovar   [n] negar   [e] editar</span>','','<span class="a-dim">&gt;</span> <span class="cur"></span>'];
+
+  function rows(h,hasBanner){return Math.floor((508-h-24-(hasBanner?36:0)-16)/20);}
+  function win(kind,tabs,o){
+    o=o||{};
+    var head=kind==='h1'?head1(tabs,o):kind==='h2'?head2(tabs,o):head3(tabs,o);
+    var ch=kind==='h1'?72:kind==='h2'?48:68;
+    var r=rows(ch,!!o.banner);
+    return '<div class="win '+kind+'">'+head+'<div class="term"><pre>'+(o.lines||L_RUN).join('\n')+'</pre></div>'+bannerH(o.banner)+
+      ctxH(o.cs||'running',o.extra,r)+(o.overlay||'')+'</div>';
+  }
+  function cap(id,title,desc){return '<div class="cap"><b><i>'+id+'</i>'+title+'</b><span>'+desc+'</span></div>';}
+
+  var TABS_A=[AT('running',{sel:1}),RV('done',{unseen:1}),BD('blocked'),AP('idle')];
+  var TABS_B=[AT('blocked',{sel:1}),RV('running'),BD('idle'),AP('failed',{unseen:1})];
+  var B1={s:'blocked',tx:'Bloqueado',sub:'aguardando a sua resposta',btn:'Ir ao prompt'};
+
+  function gearPop(top,right){
+    return '<div class="pop" role="menu" style="top:'+top+'px;right:'+right+'px">'+
+      '<button class="it hl" role="menuitem">'+I('u-gear','ico')+'Configurações…<kbd>Ctrl+,</kbd></button>'+
+      '<hr><div class="cap2">TERMINAL</div>'+
+      '<div class="row2"><span class="lb">Fonte do terminal</span><span class="stepper"><button aria-label="Diminuir">'+I('u-minus')+'</button><b>13</b><button aria-label="Aumentar">'+I('u-plus')+'</button></span></div>'+
+      '<hr><div class="cap2">AGENTES</div>'+
+      '<div class="row2"><span class="lb">Abrir o CLI ao criar o agente</span><span class="tg on"></span></div>'+
+      '<div class="row2"><span class="lb">Avisar quando bloquear ou falhar</span><span class="tg on"></span></div>'+
+      '<hr><button class="it" role="menuitem">'+I('u-keys','ico')+'Atalhos de teclado<kbd>Ctrl+/</kbd></button>'+
+      '<button class="it" role="menuitem">'+I('u-pulse','ico')+'Diagnóstico</button>'+
+      '<button class="it" role="menuitem">'+I('u-info','ico')+'Sobre o Orkest · v0.1.0</button></div>';
+  }
+
+  function srow(lb,desc,ctl,tag){return '<div class="srow"><div class="lb"><b>'+lb+(tag?'<span class="tag">'+tag+'</span>':'')+'</b>'+(desc?'<span>'+desc+'</span>':'')+'</div>'+ctl+'</div>';}
+  var FIELD=function(t,mono,dis){return '<span class="field'+(mono?' mono':'')+(dis?' dis':'')+'"><span class="grow">'+t+'</span>'+I('u-chev')+'</span>';};
+  var TG=function(on,dis){return '<span class="tg'+(on?' on':'')+(dis?' dis':'')+'"></span>';};
+  var STEP='<span class="stepper"><button>'+I('u-minus')+'</button><b>13 px</b><button>'+I('u-plus')+'</button></span>';
+  var SEC_APR='<div class="sec"><h3>Aparência e terminal</h3>'+
+    srow('Tema','Somente o tema escuro existe na V1.',FIELD('Escuro',0,1))+
+    srow('Fonte do terminal','10–20 px. Independe da interface.',STEP)+
+    srow('Cursor','','<span class="seg"><button class="on">Bloco</button><button>Barra</button></span>')+'</div>';
+  var SEC_AG='<div class="sec"><h3>Agentes</h3>'+
+    srow('CLI padrão','Pré-selecionado no modal de criação.',FIELD('Claude Code'))+
+    srow('Modelo padrão','Por CLI; "Padrão do CLI" usa o do próprio CLI.',FIELD('Padrão do CLI'))+
+    srow('Workspace padrão','',FIELD('~',1))+
+    srow('Abrir o CLI ao criar o agente','Hoje fixo; passa a ser opção.',TG(1))+
+    srow('Restaurar agentes ao abrir o app','Reconecta as sessões tmux existentes.',TG(1))+
+    srow('Confirmar ao fechar agente em execução','Evita encerrar uma tarefa por engano.',TG(1))+'</div>';
+  var SEC_NT='<div class="sec"><h3>Avisos</h3>'+
+    srow('Aviso de desktop quando bloquear ou falhar','Precisa do plugin de notificação do Tauri.',TG(1),'A CONFIRMAR')+
+    srow('Som','',TG(0,1))+'</div>';
+  var SEC_SYS='<div class="sec"><h3>Sistema</h3>'+
+    srow('Diagnóstico','dpr 1 · janela 941×508 · tmux · CLIs detectados','<button class="btn secondary">Copiar</button>')+
+    srow('Versão','Orkest 0.1.0','')+'</div>';
+  function dlgS2(){
+    return '<div class="scrim"><div class="dlg" role="dialog" aria-modal="true" aria-label="Configurações"><div class="hd"><h2>Configurações</h2><span class="x">'+I('u-x')+'</span></div>'+
+      '<div class="bd">'+SEC_APR+SEC_AG+SEC_NT+SEC_SYS+'<div class="sbar"><i></i></div></div>'+
+      '<div class="ft"><span class="hint">As alterações são salvas na hora.</span><button class="btn secondary lg">Restaurar padrões</button><button class="btn primary lg">Fechar</button></div></div></div>';
+  }
+  function dlgS3(){
+    return '<div class="scrim"><div class="dlg wide" role="dialog" aria-modal="true" aria-label="Configurações"><div class="hd"><h2>Configurações</h2><span class="x">'+I('u-x')+'</span></div>'+
+      '<div class="split"><nav class="nav"><button>'+I('u-palette')+'Aparência</button><button class="on">'+I('u-agents')+'Agentes</button><button>'+I('u-bell')+'Avisos</button><button>'+I('u-sys')+'Sistema</button></nav>'+
+      '<div class="bd">'+SEC_AG.replace('<h3>Agentes</h3>','')+'<div class="sbar"><i></i></div></div></div>'+
+      '<div class="ft"><span class="hint">As alterações são salvas na hora.</span><button class="btn primary lg">Fechar</button></div></div></div>';
+  }
+  function winCfg(overlay){return win('h2',TABS_A,{overlay:overlay,gear:1});}
+
+  function budgetTable(){
+    return '<table class="t"><tr><th>OPÇÃO</th><th>CABEÇALHO</th><th>BARRA DE CONTEXTO</th><th>TERMINAL (941×508)</th><th>LINHAS (20px)</th><th>VS. HOJE</th></tr>'+
+      '<tr><td class="n">Hoje</td><td>40px (abas de 2 linhas de texto)</td><td>24px</td><td>444px</td><td>21 (medido: 129×21)</td><td>—</td></tr>'+
+      '<tr><td class="n">H1 Duas camadas</td><td>32 + 40 = 72px</td><td>24px</td><td>412px</td><td>19</td><td class="no">−2 linhas</td></tr>'+
+      '<tr><td class="n">H2 Linha única</td><td>48px</td><td>24px</td><td>436px</td><td>21</td><td class="ok">= hoje</td></tr>'+
+      '<tr><td class="n">H3 Faixa do agente</td><td>36 + 32 = 68px</td><td>24px</td><td>416px</td><td>20</td><td class="no">−1 linha</td></tr></table>';
+  }
+
+  var V={};
+  V.cmp='<p class="intro">Três reorganizações do topo, todas dentro da Direção A. Problemas do estado atual (captura real 941×508): conteúdo da aba encostado no topo e na base, tile desalinhado verticalmente, sem separação entre grupos, <b>nenhuma área para ações globais</b> (configurações, avisos) e nenhuma identidade do app. Os três quadros têm o mesmo conteúdo: Maestro + 3 especialistas, estados mistos.</p>'+
+    cap('H1','Duas camadas','Faixa do app (marca + avisos + engrenagem) acima da linha de abas. Mais hierarquia, custa 2 linhas de terminal.')+win('h1',TABS_A,{})+
+    cap('H2','Linha única com respiro e grupos','Uma só linha de 48px: marca · grupo Maestro | especialistas · "+" · avisos · engrenagem. Abas com 4px de intervalo, tile de 28px e mais respiro interno. Mantém as 21 linhas de hoje.')+win('h2',TABS_A,{})+
+    cap('H3','Abas compactas + faixa do agente','Abas de uma linha (como editor) e uma faixa de 32px com os detalhes e ações do agente selecionado (CLI · modelo, workspace, estado, Reiniciar / Ver log / Renomear). Custa 1 linha, entrega ações por agente.')+win('h3',TABS_A,{})+
+    '<h3 style="margin-top:32px;font-size:14px;line-height:20px">Orçamento de altura</h3>'+budgetTable()+
+    '<p class="intro"><b>Recomendação (proposta): H2.</b> Preserva a área do terminal (21 linhas, igual a hoje), resolve respiro e agrupamento e abre lugar para a engrenagem. H3 é a alternativa se o usuário quiser as ações por agente sempre visíveis (paga 1 linha).</p>';
+  V.h1='<p class="intro"><b>H1 · Duas camadas.</b> Faixa do app de 32px sobre <code>bg-canvas</code> (marca "Orkest", avisos, engrenagem) e abaixo a linha de abas de 40px sobre <code>bg-chrome</code>. A diferença de luminância separa "app" de "agentes"; as abas mantêm o formato atual (tile, nome, CLI·modelo, glifo, ×).</p>'+
+    cap('H1-a','Executando, aba ativa','Aba ativa fundida ao terminal; 19 linhas de terminal.')+win('h1',TABS_A,{})+
+    cap('H1-b','Bloqueado com banner (§9.9)','Banner de 36px e botão de 28px acomodados sem mudança; terminal cai para 17 linhas.')+win('h1',TABS_B,{banner:B1,lines:L_BLK,cs:'blocked',extra:'00:48'})+
+    cap('H1-c','Menu da engrenagem aberto','Menu rápido (ver "Configurações" para o diálogo completo).')+win('h1',TABS_A,{gear:1,overlay:gearPop(66,8)});
+  V.h2='<p class="intro"><b>H2 · Linha única de 48px.</b> Marca como botão de ícone à esquerda; <b>grupo Maestro</b> (primeira aba) separado por um divisor de 1px dos especialistas; abas com 4px de intervalo e tile de 28px; "+" colado à última aba (F6); avisos e engrenagem à direita. Com 4 agentes em 941px cada aba mede cerca de 190px (flexível 168–220; <b>ajuste explícito</b> ao §9.9, que fixava 220px quando couber). Para o modelo caber, o × aparece só no hover (também na aba ativa; <b>ajuste explícito</b> ao §4.1); fechar por <code>Ctrl+Shift+W</code> (o <code>Ctrl+W</code> pertence ao terminal).</p>'+
+    cap('H2-a','Executando, aba ativa','Mesmas 21 linhas de terminal de hoje.')+win('h2',TABS_A,{})+
+    cap('H2-b','Bloqueado com banner (§9.9)','Banner de 36px e botão de 28px sem alteração; aba de falha com ponto de nova saída.')+win('h2',TABS_B,{banner:B1,lines:L_BLK,cs:'blocked',extra:'00:48'})+
+    cap('H2-c','Menu da engrenagem aberto','Itens de 32px, controles de 28px, 288px de largura, sombra de popover.')+win('h2',TABS_A,{gear:1,overlay:gearPop(52,8)});
+  V.h3='<p class="intro"><b>H3 · Abas compactas + faixa do agente.</b> Linha de abas de 36px (aba ativa avança para fundir com a faixa) e uma faixa de 32px sobre <code>bg-terminal</code> com tile, nome, chips de CLI·modelo e workspace, estado e ações do agente (botões ghost de 28px). Os detalhes saem das abas, que ficam leves.</p>'+
+    cap('H3-a','Executando, aba ativa','Faixa mostra CLI, workspace e estado; 20 linhas de terminal.')+win('h3',TABS_A,{elapsed:'02:14'})+
+    cap('H3-b','Bloqueado com banner (§9.9)','A faixa repete o estado; o banner continua sendo o lugar da ação urgente. Risco: duplicidade de informação.')+win('h3',TABS_B,{banner:B1,lines:L_BLK,cs:'blocked',extra:'00:48',elapsed:'00:48'})+
+    cap('H3-c','Menu da engrenagem aberto','Mesmo menu rápido.')+win('h3',TABS_A,{gear:1,overlay:gearPop(38,8),elapsed:'02:14'});
+  var settingsTable='<table class="t"><tr><th>ITEM</th><th>ONDE VIVE HOJE (verificado no código)</th><th>O QUE FALTA</th></tr>'+
+    '<tr><td class="n">Fonte do terminal</td><td class="ok">localStorage <code>orkest.termFontSize</code>, faixa 10–20, atalhos já funcionam</td><td>só o controle visual no menu</td></tr>'+
+    '<tr><td class="n">Tema</td><td>só escuro (não há tema claro)</td><td>mostrar desabilitado; não prometer claro</td></tr>'+
+    '<tr><td class="n">Cursor bloco/barra</td><td>opção do xterm (frontend)</td><td>controle + persistência local</td></tr>'+
+    '<tr><td class="n">CLI/modelo/workspace padrão</td><td>modal pré-seleciona o 1º CLI; <code>detect_clis</code> existe</td><td>guardar o padrão (local) e ler no modal</td></tr>'+
+    '<tr><td class="n">Abrir o CLI ao criar</td><td>fixo: <code>write_input</code> após attach (ORKEST-M2-3)</td><td>tornar opcional (frontend)</td></tr>'+
+    '<tr><td class="n">Restaurar agentes ao abrir</td><td><code>reconnect_session</code> existe no backend</td><td>confirmar com o backend se o app restaura sozinho; ligar a opção</td></tr>'+
+    '<tr><td class="n">Confirmar ao fechar em execução</td><td>decisão §7.2 ainda aberta</td><td>decisão do usuário + regra no frontend</td></tr>'+
+    '<tr><td class="n">Aviso de desktop</td><td class="no">nenhum plugin de notificação encontrado</td><td>backend/Tauri: plugin + permissão (A CONFIRMAR)</td></tr>'+
+    '<tr><td class="n">Diagnóstico</td><td>dpr/tamanho: frontend; tmux/CLIs: <code>detect_clis</code> parcial</td><td>comando para versão do tmux e do app (backend)</td></tr>'+
+    '<tr><td class="n">Armazenamento das configs</td><td class="no">SQLite só tem a tabela <code>messages</code>; não há tabela de configurações</td><td>decidir: localStorage na V1 (simples) ou tabela no backend</td></tr></table>';
+  V.cfg='<p class="intro"><b>Menu de configuração.</b> Duas camadas: (1) <b>menu rápido</b> na engrenagem — o que se muda com frequência e itens de ajuda; (2) <b>diálogo "Configurações…"</b> (<code>Ctrl+,</code>) com tudo. As alterações valem na hora, sem botão Salvar. Itens sem suporte hoje aparecem como proposta (tabela abaixo) — o backend/Builder confirma antes de prometer.</p>'+
+    cap('S1','Menu rápido (engrenagem)','Fonte do terminal, dois interruptores, atalhos, diagnóstico e sobre. Já mostrado em H1-c, H2-c e H3-c.')+winCfg(gearPop(52,8))+
+    cap('S2','Diálogo com seções em coluna única (recomendado)','Mesmo padrão do modal de criação (560px, 85% da altura, cabeçalho e rodapé fixos, corpo com rolagem). Linhas de 44px: rótulo + descrição à esquerda, controle à direita.')+winCfg(dlgS2())+
+    cap('S3','Diálogo com navegação lateral','640px, categorias à esquerda (Aparência, Agentes, Avisos, Sistema), uma categoria por vez. Menos rolagem, mais cliques; mostrado na categoria "Agentes".')+winCfg(dlgS3())+
+    '<h3 style="margin-top:32px;font-size:14px;line-height:20px">O que entra e o que o código já tem</h3>'+settingsTable+
+    '<ul class="notes"><li>O botão "Restaurar padrões" apaga só as preferências, nunca agentes ou sessões.</li><li>Interruptor: trilho 28×16 (raio 8) e bolinha 12 px; ligado = <code>accent</code>; desabilitado a 40% de opacidade.</li><li>Todos os controles seguem §9: campos 36 px, botões 32 px (rodapé) e 28 px (dentro de linhas e do menu).</li></ul>';
+
+  var root=document.getElementById('root');
+  root.innerHTML=Object.keys(V).map(function(k){return '<section class="view" id="v-'+k+'">'+V[k]+'</section>';}).join('');
+  var btns=document.querySelectorAll('.pv-nav button');
+  function show(v){
+    document.querySelectorAll('.view').forEach(function(e){e.classList.toggle('on',e.id==='v-'+v)});
+    btns.forEach(function(b){b.setAttribute('aria-pressed',b.dataset.view===v?'true':'false')});
+    try{history.replaceState(null,'','#'+v)}catch(e){}
+  }
+  btns.forEach(function(b){b.addEventListener('click',function(){show(b.dataset.view)})});
+  var h=(location.hash||'').slice(1); show(V[h]?h:'cmp');
+})();
+</script>
+</body>
+</html>

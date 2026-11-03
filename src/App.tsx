@@ -117,7 +117,10 @@ function App() {
   );
 
   // Atalhos: Ctrl+Shift+N abre o modal; Ctrl+Tab / Ctrl+Shift+Tab ciclam;
-  // Ctrl+Shift+= / Ctrl+Shift+- / Ctrl+Shift+0 ajustam a fonte do terminal (§9.4).
+  // Ctrl+Shift+= (aumenta), Ctrl+Alt+- (diminui; Ctrl+Shift+- é consumido pelo
+  // acelerador de zoom do WebKitGTK) e Ctrl+Shift+0 (reset) ajustam a fonte (§9.4).
+  // O decremento casa com Alt+- (independente de Ctrl) porque o XWayland às vezes
+  // entrega o combo CTRL+ALT apenas como Alt+- (omezibação da injeção/teclado real).
   // Quando o foco está no terminal, apenas atalhos com Ctrl+Shift ou Alt são
   // capturados pelo app (§4.1).
   useEffect(() => {
@@ -125,13 +128,17 @@ function App() {
       const target = e.target as HTMLElement | null;
       const inTerminal = !!target?.closest?.(".ork-term");
       const ctrlShift = e.ctrlKey && e.shiftKey;
+      const altMinus = e.altKey && e.code === "Minus";
 
       if (inTerminal && !e.altKey && !ctrlShift) return;
 
       if (ctrlShift && e.code === "KeyN") {
         e.preventDefault();
         setModalOpen(true);
-      } else if (ctrlShift && (e.code === "Equal" || e.code === "Minus" || e.code === "Digit0")) {
+      } else if (
+        (ctrlShift && (e.code === "Equal" || e.code === "Digit0")) ||
+        altMinus
+      ) {
         e.preventDefault();
         setTermFontSize((cur) => {
           if (e.code === "Equal") return Math.min(TERM_FONT_MAX, cur + 1);

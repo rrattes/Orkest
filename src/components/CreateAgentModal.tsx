@@ -353,7 +353,7 @@ export function CreateAgentModal({ existingNames, onCreate, onClose }: CreateAge
             <button
               type="submit"
               className="ork-btn ork-btn-primary"
-              disabled={submitting}
+              disabled={submitting || !!nameErrorLive || !!cliError}
             >
               {submitting ? "Criando…" : "Criar agente"}
             </button>

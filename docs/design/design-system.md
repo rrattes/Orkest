@@ -480,7 +480,9 @@ Capturas examinadas (todas em `/tmp/opencode/`): `orkest-m1.png`, `orkest-tab.pn
 
 **Prioridade da área útil do terminal:** cromo fixo total = 40 + 24 = **64 px** de altura; sem sidebar. Em janela 941×508 (DPR 1) sobram ≈ 444 px para o terminal; com padding de 8 px e fonte 13/16,25 isso dá **≈ 26 linhas × ≈ 115 colunas** (estimativa; confirmar pelo `cols×rows` da barra de contexto).
 
-### 9.2 Modal de criação, abas e "+"
+### 9.2 Modal de criação, abas e "+" (tabela substituída pela §9.7/ORKEST-CLOSE-VIS)
+
+> **Substituição declarada (ORKEST-CLOSE-VIS):** a "Estrutura" da versão vista anteriormente (tres seções: Execução, Identidade, Role) foi substituída pelas **duas seções fechadas na §9.7** (Execução · Identidade, com Role como último campo de Identidade — aceite V-29). Os itens dimensionais desta tabela (largura, altura máxima, cabeçalho/corpo/rodapé, foco, cartão de CLI, prévia de Role) continuam válidos.
 
 | Item | Especificação exata |
 |---|---|
@@ -534,7 +536,7 @@ Capturas examinadas (todas em `/tmp/opencode/`): `orkest-m1.png`, `orkest-tab.pn
 | Item | Especificação |
 |---|---|
 | **tmux dentro do terminal (F2)** | O terminal não deve exibir a barra de status do tmux. Sessões gerenciadas pelo Orkest devem ocultá-la **por sessão** (opção de status desligada nessa sessão), sem editar o `~/.tmux.conf` do usuário. O estado/nome já vivem na barra de abas e na barra de contexto. Se o status for mantido, ele precisa seguir os tokens (fundo `bg-chrome`, texto `text-tertiary`, sem realce azul) e nunca mostrar o UUID |
-| Fonte do terminal | Controle **independente** da UI: `--ork-fs-terminal` 13 px padrão, faixa 10–20 px, passo 1 px; atalhos propostos `Ctrl+Shift+=`, `Ctrl+Shift+-`, `Ctrl+Shift+0` (só captura com `Ctrl+Shift`, preservando `Ctrl+=`/`Ctrl+-` para os CLIs); valor persistido na configuração do app; ao mudar, refazer o `fit` e enviar `cols×rows` à PTY |
+| Fonte do terminal | Controle **independente** da UI: `--ork-fs-terminal` 13 px padrão, faixa 10–20 px, passo 1 px; atalhos `Ctrl+Shift+=` (aumenta), **`Ctrl+Alt+-`** (diminui — re-binding ORKEST-CLOSE-VIS: `Ctrl+Shift+-` é consumido pelo acelerador de zoom do WebKitGTK; o handler casa com `Alt+-` com ou sem Ctrl porque o pipeline de teclado XWayland entrega `Ctrl+Alt+-` como `Alt+-` puro), `Ctrl+Shift+0` (reset); o `Ctrl+=`/`Ctrl+-` puros continuam indo aos CLIs; valor persistido na configuração do app; ao mudar, refazer o `fit` e enviar `cols×rows` à PTY |
 | Legibilidade | corpo 13 px com altura de linha 1,25; contraste conforme §4.4 |
 | Ordem de prioridade | terminal > aba ativa > estado dos demais agentes > restante (§2, Direção A) |
 
@@ -564,7 +566,8 @@ Princípio: **o layout é definido em px CSS e deve se comportar igual em qualqu
 | V-25 | Terminal real: foco (linha `accent` no topo do painel, cursor de bloco ↔ vazado), redimensionamento da janela atualiza `cols×rows` e a PTY, teclado funciona (Tab, Ctrl+C, setas) | roteiro manual + captura |
 | V-26 | Nenhum uso de CSS `zoom`, `transform: scale()` ou escala por DPR em JS; nenhuma mudança de env/config global | revisão de código |
 | V-27 | Sem overlay de depuração no build de revisão; estado vazio com ícone "+" e dica `Ctrl+Shift+N` no CTA | captura |
-| V-28 | Altura medida do modal com tudo visível fica dentro de ±8 px do orçamento (720 px); divergência maior é investigada | medição |
+| V-28 | Altura medida do modal com tudo visível fica dentro de ±8 px do **orçamento re-basado 696 px** (antes: 720; re-base ORKEST-CLOSE-VIS por medição real, **sujeito a veto do usuário**). Nota: o modal cresce ~142 px quando o hint de erro do Nome está visível (696→~838 px) — essa variação é esperada e não conta para o orçamento; divergência maior é investigada | medição (`getBoundingClientRect`) + captura |
+| V-29 | Nenhum rótulo de campo repete o título da sua seção; modal com exatamente duas seções (Execução, Identidade), Role como último campo de Identidade | revisão de código + captura |
 
 ### 9.7 Correção de redundância no modal (Role duplicado)
 
@@ -573,6 +576,23 @@ Princípio: **o layout é definido em px CSS e deve se comportar igual em qualqu
 - **Estrutura corrigida:** duas seções.
   1. **Execução:** CLI · Modelo · Workspace.
   2. **Identidade:** Nome · Ícone · Tipo · **Role** (o campo Role passa a ser o último da seção; sem cabeçalho próprio).
-- **Orçamento de altura:** remove o título da seção Role (16+8) e um gap de seção (16): **−40 px** → total estimado **≈ 680 px** (era 720; estimativa por soma, a confirmar por medição, V-28).
+- **Orçamento de altura:** a estimativa por soma era **≈ 680 px** (remoção de título/gap: −40 px sobre 720). **Medição real (ORKEST-VIS-1, `getBoundingClientRect` + captura): 696 px** — estável em 941×1030 e 1920×1080; a diferença (+16 px) vem de helpers reais não somados na estimativa (linha de help do Workspace, hint do Tipo/Role). **Orçamento re-basado para 696±8 px (ORKEST-CLOSE-VIS, V-28) — sujeito a veto do usuário.** Nenhum corte de CSS foi feito.
 - **Ordem do controle Tipo:** a spec define "Maestro / Especialista" com **Especialista** como padrão; a captura mostra "Especialista | Maestro". A ordem visual não é crítica; manter **Especialista primeiro** é aceitável porque é o padrão e a opção mais comum — a spec passa a adotar essa ordem.
-- **Aceite V-29:** nenhum rótulo de campo repete o título da sua seção; modal com exatamente duas seções (Execução, Identidade).
+- **Aceite V-29:** movido para a tabela §9.6 (V-29), com captura-evidência.
+
+### 9.8 Aceites formais do ciclo visual (ORKEST-CLOSE-VIS)
+
+Aceites fechados, cada um com captura-evidência correspondente em `docs/design/screenshots/`:
+
+| ID | Aceite | Estado | Evidência |
+|---|---|---|---|
+| V-20 | Modal ≤ min(560, 92 vw) e ≤ 85% vh nas três larguras; header/footer sempre visíveis | **PASS** (largura 562 px; caps 434/614 px nas janelas baixas) | `v20-modal-941x508.png`, `v20-modal-1280x720.png`, `v28-modal-full-1920x1080.png` |
+| V-24 | Terminal sem barra de status do tmux nem UUID | **PASS** | `s94-font-13-before.png`, `fix2-terminal-pty-echo.png` |
+| F6 | Botão "+" junto da última aba | **PASS** | `fix2-3agentes-abas.png` |
+| V-29 | Duas seções (Execução/Identidade); Role sem cabeçalho próprio; 1 rótulo Role | **PASS** (código + captura) | `v29-two-sections-1920x1080.png`, `fix2-modal-fresh-cli-preselect-1role.png` (e captura do usuário `bug-role-duplicado-usuario-1346.png` = instância stale pré-fix) |
+| §9.4 (fonte) | Atalhos +/reset funcionam, faixa 10–20, re-fit + PTY | **PASS com exceção** → decremento re-bindado em `Ctrl+Alt+-` (ORKEST-CLOSE-VIS); `Ctrl+Shift+-` é comido pelo zoom do WebKitGTK | `s94-font-13-before.png`, `s94-font-20-after.png`, `s94-font-13-reset.png` + decremento novo: `closevis-decremento-ctrlalt-13-12.png` |
+| Env in-process | `GDK_BACKEND=x11` + `WEBKIT_DISABLE_DMABUF_RENDERER=1` dentro do `main.rs` (webview cinza eliminado) | **PASS** (associado às notas V-17/§9.5) | `fix-env-webview-pinta-sem-env.png` |
+| Pré-seleção de CLI | Primeiro CLI da lista pré-selecionado (detecção de instalados segue §7.7 em aberto) | **PASS** | `fix2-modal-fresh-cli-preselect-1role.png` |
+| Listbox (Modelo) | Listbox custom: pop, opções, seleção padrão | **PASS** | `fix2-listbox-modelo-aberto.png` |
+| Botão "Criar agente" c/ erro | desabilita quando campo em erro (duplicado/obrigatório/CLI); erro sempre visível ao digitar duplicado; modal não cria aba e não fecha no erro; fecha no sucesso | **PASS** | `fix2-nome-duplicado-erro-visivel.png`, `fix2-nome-duplicado-renome-fecha.png`, `closevis-botao-criar-desabilitado-erro-dup.png` |
+| Estados ≠ idle (running/blocked/failed/done) | — | **pendente para Marco 2** (validação de estados: exercício real no Marco 2; não implementado nesta ronda) | — |
